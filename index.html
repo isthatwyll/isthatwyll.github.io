@@ -147,7 +147,7 @@
             color: var(--text-secondary);
         }
 
-        select, textarea, input {
+        select, textarea, input[type="text"], input[type="number"] {
             width: 100%;
             padding: 12px;
             background: var(--bg-secondary);
@@ -156,6 +156,17 @@
             color: var(--text-primary);
             font-size: 1rem;
             transition: all 0.3s ease;
+        }
+
+        /* Estilo específico para input file */
+        input[type="file"] {
+            width: 100%;
+            padding: 15px;
+            border: 2px dashed var(--accent-color);
+            border-radius: 8px;
+            background: var(--bg-secondary);
+            cursor: pointer;
+            text-align: center;
         }
 
         select:focus, textarea:focus, input:focus {
@@ -300,7 +311,8 @@
 
         .progress-bar {
             height: 8px;
-            background: var(--bg-secondary);
+            background: var(--bg-primary); /* Ajustado para contraste */
+            border: 1px solid var(--border-color);
             border-radius: 4px;
             overflow: hidden;
             margin: 10px 0;
@@ -369,8 +381,8 @@
                     <label>Estratégia de Geração:</label>
                     <select id="strategy">
                         <option value="avoid_history">🚫 Evitar Histórico (100% Único)</option>
-                        <option value="least_drawn">📉 Dezenas Menos Sorteadas</option>
-                        <option value="most_drawn">📈 Dezenas Mais Sorteadas</option>
+                        <option value="least_drawn">📉 Dezenas Menos Sorteadas (Piso)</option>
+                        <option value="most_drawn">📈 Dezenas Mais Sorteadas (Teto)</option>
                         <option value="balanced">⚖️ Balanceada (Mix de frequências)</option>
                         <option value="fibonacci">🔢 Sequência Fibonacci</option>
                         <option value="prime">🔴 Números Primos</option>
@@ -387,7 +399,7 @@
 
                 <div class="checkbox-group">
                     <input type="checkbox" id="balanceOddEven">
-                    <label for="balanceOddEven">Balancear pares/ímpares</label>
+                    <label for="balanceOddEven">Balancear pares/ímpares (3/3 ou 4/2)</label>
                 </div>
 
                 <button class="btn btn-success" onclick="generateNumbers()">✨ Gerar Combinação</button>
@@ -399,7 +411,7 @@
         <!-- TAB: ANALISADOR -->
         <div id="analyzer" class="tab-content">
             <div class="card">
-                <h2>Analisador de Jogos</h2>
+                <h2>Analisador de Jogos (Unicidade Dinâmica)</h2>
                 
                 <div class="form-group">
                     <label>Insira os jogos (um por linha):</label>
@@ -418,7 +430,8 @@ PEDRO 07 14 21 28 35 42"></textarea>
         <!-- TAB: ESTATÍSTICAS -->
         <div id="stats" class="tab-content">
             <div class="card">
-                <h2>Estatísticas Globais</h2>
+                <h2>Estatísticas Globais e Upload</h2>
+                <!-- Área dinâmica de status -->
                 <div id="statsContent" class="loading">Carregando estatísticas...</div>
             </div>
         </div>
@@ -427,57 +440,171 @@ PEDRO 07 14 21 28 35 42"></textarea>
     <script>
         let historicalData = [];
         let numberFrequency = {};
+        let minFreq = 0;
+        let maxFreq = 0;
 
-        // Carregar dados históricos
+        // ------------------------------------------------------------------
+        // SISTEMA DE CARREGAMENTO DE DADOS (ROBUSTO COM FALLBACK)
+        // ------------------------------------------------------------------
+
         async function loadHistoricalData() {
+            const fileName = 'Todos os resultados da Mega Sena  Rede Loteria.txt';
+            
             try {
-                const response = await fetch('Todos os resultados da Mega Sena  Rede Loteria.txt');
-                const text = await response.text();
-                const lines = text.split('\n').slice(1); // Pular cabeçalho
-                
-                historicalData = [];
-                numberFrequency = {};
-                
-                for (let i = 1; i <= 60; i++) {
-                    numberFrequency[i] = 0;
+                let response;
+                try {
+                    // Tenta carregar automaticamente usando encodeURI para caracteres especiais
+                    response = await fetch(encodeURI(fileName));
+                } catch (networkError) {
+                    throw new Error("Falha na requisição (bloqueio de navegador ou arquivo inexistente).");
                 }
+
+                if (!response.ok) {
+                    throw new Error(`Erro HTTP: ${response.status}`);
+                }
+
+                const text = await response.text();
+                processData(text);
                 
-                lines.forEach(line => {
-                    const parts = line.split(',');
-                    if (parts.length >= 9) {
-                        const numbers = [
-                            parseInt(parts[2]),
-                            parseInt(parts[3]),
-                            parseInt(parts[4]),
-                            parseInt(parts[5]),
-                            parseInt(parts[6]),
-                            parseInt(parts[7])
-                        ].filter(n => !isNaN(n) && n >= 1 && n <= 60).sort((a, b) => a - b);
-                        
-                        if (numbers.length === 6) {
-                            historicalData.push(numbers);
-                            numbers.forEach(n => numberFrequency[n]++);
-                        }
-                    }
-                });
-                
-                updateStats();
             } catch (error) {
-                console.error('Erro ao carregar dados:', error);
-                alert('Erro ao carregar dados históricos. Certifique-se de que o arquivo está na mesma pasta.');
+                console.warn("Carregamento automático falhou. Ativando modo manual.", error);
+                showManualUploadUI();
             }
         }
 
-        // Verificar se combinação existe no histórico
-        function combinationExists(numbers) {
-            const sorted = [...numbers].sort((a, b) => a - b);
-            return historicalData.some(combo => 
-                combo.every((n, i) => n === sorted[i])
-            );
+        function showManualUploadUI() {
+            const html = `
+                <div class="info-box" style="border-left-color: var(--warning-color); background-color: var(--bg-secondary);">
+                    <h3>⚠️ Arquivo de Dados Necessário</h3>
+                    <p>Devido às restrições de segurança do navegador, o simulador não conseguiu ler o arquivo local automaticamente.</p>
+                    <p style="margin: 15px 0; font-weight: bold;">Por favor, selecione o arquivo manualmente abaixo:</p>
+                    
+                    <div style="margin: 20px 0;">
+                        <input type="file" id="fileInput" accept=".txt,.csv" onchange="handleFileUpload(this)">
+                    </div>
+                    
+                    <p class="help-text">Selecione o arquivo "Todos os resultados da Mega Sena..." que você baixou.</p>
+                </div>
+            `;
+            document.getElementById('statsContent').innerHTML = html;
         }
 
-        // Gerar números baseado na estratégia
+        function handleFileUpload(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                processData(e.target.result);
+                // Feedback visual
+                alert('Dados carregados com sucesso! Agora você pode gerar jogos.');
+            };
+            reader.readAsText(file);
+        }
+
+        function processData(text) {
+            const lines = text.split('\n');
+            historicalData = [];
+            numberFrequency = {};
+            
+            // Inicializa contadores
+            for (let i = 1; i <= 60; i++) {
+                numberFrequency[i] = 0;
+            }
+            
+            lines.forEach((line, index) => {
+                if (index === 0 || !line.trim()) return; // Pula cabeçalho ou linhas vazias
+                
+                // Parser flexível para lidar com diferentes separadores (vírgula, tab, ponto e vírgula)
+                const parts = line.split(/[\t,;]+/); 
+                
+                // Tenta extrair números válidos
+                const validNumbers = parts
+                    .map(p => parseInt(p.trim()))
+                    .filter(n => !isNaN(n) && n >= 1 && n <= 60);
+
+                // Heurística: Se encontrar >= 6 números na linha, tenta identificar as dezenas
+                if (validNumbers.length >= 6) {
+                    // Fallback para a estrutura original do arquivo se possível (colunas fixas)
+                    const partsOriginal = line.split(',');
+                    let numbers = [];
+
+                    if (partsOriginal.length >= 8) {
+                        // Tenta pegar colunas fixas (ajustar índices conforme CSV real, aqui assume 2 a 7)
+                        const cols = [2,3,4,5,6,7].map(idx => parseInt(partsOriginal[idx]));
+                        if (cols.every(n => !isNaN(n))) {
+                            numbers = cols.sort((a,b)=>a-b);
+                        } else {
+                            // Se falhar, pega os primeiros 6 números válidos encontrados
+                            numbers = validNumbers.slice(0, 6).sort((a,b)=>a-b);
+                        }
+                    } else {
+                        numbers = validNumbers.slice(0, 6).sort((a,b)=>a-b);
+                    }
+                    
+                    // Valida se são únicos e dentro do range
+                    if (numbers.length === 6 && new Set(numbers).size === 6) {
+                        historicalData.push(numbers);
+                        numbers.forEach(n => numberFrequency[n]++);
+                    }
+                }
+            });
+
+            // RECALIBRAGEM DINÂMICA (A Mágica do Score)
+            if (historicalData.length > 0) {
+                const frequencies = Object.values(numberFrequency);
+                minFreq = Math.min(...frequencies);
+                maxFreq = Math.max(...frequencies);
+                updateStats();
+                
+                // Mensagem de sucesso na aba Generator se estiver vazia
+                const genRes = document.getElementById('generatedResult');
+                if (!genRes.innerHTML) {
+                    genRes.innerHTML = `<div class="info-box" style="border-left-color: var(--success-color)">Base de dados pronta: ${historicalData.length} concursos carregados.</div>`;
+                }
+            } else {
+                alert('Erro: O arquivo parece não conter dados válidos da Mega Sena.');
+            }
+        }
+
+        // ------------------------------------------------------------------
+        // LÓGICA DE UNICIDADE DINÂMICA
+        // ------------------------------------------------------------------
+
+        function calculateUniqueness(numbers) {
+            // 1. Verificação Binária Absoluta (Se já saiu, é zero)
+            const sorted = [...numbers].sort((a, b) => a - b);
+            const exists = historicalData.some(combo => 
+                combo.every((n, i) => n === sorted[i])
+            );
+            if (exists) return 0;
+
+            // 2. Cálculo Relativo Dinâmico
+            // Quanto mais próxima a frequência média estiver do PISO (minFreq), maior o score.
+            const avgFreq = numbers.reduce((sum, n) => sum + (numberFrequency[n] || 0), 0) / 6;
+            
+            // Evita divisão por zero se banco for pequeno
+            const range = maxFreq - minFreq || 1; 
+            
+            // Fórmula: Inverte a escala.
+            // Se avgFreq == minFreq (o mais raro possível), score = 100.
+            // Se avgFreq == maxFreq (o mais comum possível), score = 0.
+            let score = 100 * (1 - (avgFreq - minFreq) / range);
+            
+            return Math.max(0, Math.min(100, score));
+        }
+
+        // ------------------------------------------------------------------
+        // ESTRATÉGIAS DE GERAÇÃO (TODAS AS ORIGINAIS RESTAURADAS)
+        // ------------------------------------------------------------------
+
         function generateNumbers() {
+            if (historicalData.length === 0) {
+                alert('Por favor, carregue os dados na aba "Estatísticas" primeiro.');
+                switchTab('stats');
+                return;
+            }
+
             const strategy = document.getElementById('strategy').value;
             const avoidConsecutive = document.getElementById('avoidConsecutive').checked;
             const balanceOddEven = document.getElementById('balanceOddEven').checked;
@@ -499,6 +626,16 @@ PEDRO 07 14 21 28 35 42"></textarea>
                     continue;
                 }
                 
+                // Filtro de Qualidade de Unicidade
+                // Aceita qualquer score se a estratégia for propositalmente "most_drawn"
+                // Para outras, tenta buscar algo com unicidade razoável (>20%)
+                const score = calculateUniqueness(numbers);
+                if (strategy !== 'most_drawn' && score < 20) {
+                     attempts++;
+                     continue;
+                }
+                
+                // Garante que não repete histórico (mesmo que estratégia não seja avoid_history)
                 if (!combinationExists(numbers)) {
                     break;
                 }
@@ -506,7 +643,7 @@ PEDRO 07 14 21 28 35 42"></textarea>
             }
             
             if (attempts >= maxAttempts) {
-                alert('Não foi possível gerar uma combinação única com os critérios selecionados. Tente relaxar as restrições.');
+                alert('Não foi possível gerar uma combinação com os filtros atuais. Tente relaxar as restrições.');
                 return;
             }
             
@@ -515,7 +652,6 @@ PEDRO 07 14 21 28 35 42"></textarea>
 
         function generateByStrategy(strategy) {
             let numbers = [];
-            
             switch(strategy) {
                 case 'avoid_history':
                     numbers = generateRandom();
@@ -541,74 +677,58 @@ PEDRO 07 14 21 28 35 42"></textarea>
                 case 'random_weighted':
                     numbers = generateWeighted();
                     break;
+                default:
+                    numbers = generateRandom();
             }
-            
             return numbers.sort((a, b) => a - b);
         }
 
+        // Funções auxiliares de geração
         function generateRandom() {
             const numbers = new Set();
-            while (numbers.size < 6) {
-                numbers.add(Math.floor(Math.random() * 60) + 1);
-            }
+            while (numbers.size < 6) numbers.add(Math.floor(Math.random() * 60) + 1);
             return Array.from(numbers);
         }
 
         function generateLeastDrawn() {
+            // Prioriza números próximos ao minFreq
             const sorted = Object.entries(numberFrequency)
                 .sort((a, b) => a[1] - b[1])
                 .map(e => parseInt(e[0]));
             
             const numbers = new Set();
-            let i = 0;
-            while (numbers.size < 6 && i < sorted.length) {
-                if (Math.random() > 0.3 || numbers.size < 3) {
-                    numbers.add(sorted[i]);
-                }
-                i++;
-            }
+            const pool = sorted.slice(0, 25); // Pega os 25 menos sorteados
             
-            while (numbers.size < 6) {
-                numbers.add(Math.floor(Math.random() * 60) + 1);
-            }
-            
+            while(numbers.size < 5) numbers.add(pool[Math.floor(Math.random() * pool.length)]);
+            while(numbers.size < 6) numbers.add(Math.floor(Math.random() * 60) + 1); // 1 aleatório puro
             return Array.from(numbers);
         }
 
         function generateMostDrawn() {
+            // Prioriza números próximos ao maxFreq
             const sorted = Object.entries(numberFrequency)
                 .sort((a, b) => b[1] - a[1])
                 .map(e => parseInt(e[0]));
             
             const numbers = new Set();
-            let i = 0;
-            while (numbers.size < 6 && i < sorted.length) {
-                if (Math.random() > 0.3 || numbers.size < 3) {
-                    numbers.add(sorted[i]);
-                }
-                i++;
-            }
-            
-            while (numbers.size < 6) {
-                numbers.add(Math.floor(Math.random() * 60) + 1);
-            }
-            
+            const pool = sorted.slice(0, 25);
+            while(numbers.size < 5) numbers.add(pool[Math.floor(Math.random() * pool.length)]);
+            while(numbers.size < 6) numbers.add(Math.floor(Math.random() * 60) + 1);
             return Array.from(numbers);
         }
 
         function generateBalanced() {
+            // Pega do meio da tabela
             const sorted = Object.entries(numberFrequency)
-                .sort((a, b) => b[1] - a[1])
+                .sort((a, b) => a[1] - b[1])
                 .map(e => parseInt(e[0]));
             
             const numbers = new Set();
-            numbers.add(sorted[Math.floor(Math.random() * 10)]);
-            numbers.add(sorted[sorted.length - 1 - Math.floor(Math.random() * 10)]);
+            const mid = Math.floor(sorted.length / 2);
+            // Pool de 30 números do meio
+            const pool = sorted.slice(mid - 15, mid + 15);
             
-            while (numbers.size < 6) {
-                numbers.add(Math.floor(Math.random() * 60) + 1);
-            }
-            
+            while(numbers.size < 6) numbers.add(pool[Math.floor(Math.random() * pool.length)]);
             return Array.from(numbers);
         }
 
@@ -616,60 +736,43 @@ PEDRO 07 14 21 28 35 42"></textarea>
             const fib = [1, 2, 3, 5, 8, 13, 21, 34, 55];
             const numbers = new Set();
             
-            fib.forEach(n => {
-                if (n <= 60 && numbers.size < 4) {
-                    if (Math.random() > 0.4) numbers.add(n);
-                }
-            });
-            
-            while (numbers.size < 6) {
-                numbers.add(Math.floor(Math.random() * 60) + 1);
+            // Tenta colocar 4 numeros de fibonacci
+            while(numbers.size < 4) {
+                 numbers.add(fib[Math.floor(Math.random() * fib.length)]);
             }
-            
+            // Completa com aleatórios
+            while (numbers.size < 6) numbers.add(Math.floor(Math.random() * 60) + 1);
             return Array.from(numbers);
         }
 
         function generatePrime() {
             const primes = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59];
             const numbers = new Set();
-            
-            while (numbers.size < 4) {
-                numbers.add(primes[Math.floor(Math.random() * primes.length)]);
-            }
-            
-            while (numbers.size < 6) {
-                numbers.add(Math.floor(Math.random() * 60) + 1);
-            }
-            
+            while (numbers.size < 4) numbers.add(primes[Math.floor(Math.random() * primes.length)]);
+            while (numbers.size < 6) numbers.add(Math.floor(Math.random() * 60) + 1);
             return Array.from(numbers);
         }
 
         function generateHotCold() {
-            const sorted = Object.entries(numberFrequency)
-                .sort((a, b) => b[1] - a[1])
-                .map(e => parseInt(e[0]));
-            
+            const sorted = Object.entries(numberFrequency).sort((a, b) => b[1] - a[1]).map(e => parseInt(e[0]));
             const numbers = new Set();
             
-            for (let i = 0; i < 3; i++) {
-                numbers.add(sorted[Math.floor(Math.random() * 15)]);
-            }
-            
-            for (let i = 0; i < 3; i++) {
-                numbers.add(sorted[sorted.length - 1 - Math.floor(Math.random() * 15)]);
-            }
+            // 3 Quentes (Top 15)
+            while(numbers.size < 3) numbers.add(sorted[Math.floor(Math.random() * 15)]);
+            // 3 Frios (Bottom 15)
+            while(numbers.size < 6) numbers.add(sorted[sorted.length - 1 - Math.floor(Math.random() * 15)]);
             
             return Array.from(numbers);
         }
 
         function generateWeighted() {
             const numbers = new Set();
+            // Lógica de roleta viciada baseada na frequência
             const total = Object.values(numberFrequency).reduce((a, b) => a + b, 0);
             
             while (numbers.size < 6) {
                 let rand = Math.random() * total;
                 let sum = 0;
-                
                 for (let [num, freq] of Object.entries(numberFrequency)) {
                     sum += freq;
                     if (rand <= sum) {
@@ -678,8 +781,14 @@ PEDRO 07 14 21 28 35 42"></textarea>
                     }
                 }
             }
-            
             return Array.from(numbers);
+        }
+
+        function combinationExists(numbers) {
+            const sorted = [...numbers].sort((a, b) => a - b);
+            return historicalData.some(combo => 
+                combo.every((n, i) => n === sorted[i])
+            );
         }
 
         function hasConsecutive(numbers) {
@@ -695,9 +804,13 @@ PEDRO 07 14 21 28 35 42"></textarea>
             return odd >= 2 && odd <= 4;
         }
 
+        // ------------------------------------------------------------------
+        // EXIBIÇÃO E ANÁLISE
+        // ------------------------------------------------------------------
+
         function displayGenerated(numbers, strategy) {
+            const score = calculateUniqueness(numbers);
             const freqs = numbers.map(n => numberFrequency[n] || 0);
-            const avgFreq = freqs.reduce((a, b) => a + b, 0) / 6;
             
             const strategyNames = {
                 'avoid_history': '🚫 Evitar Histórico',
@@ -712,8 +825,10 @@ PEDRO 07 14 21 28 35 42"></textarea>
             
             const html = `
                 <div class="info-box" style="margin-top: 30px;">
-                    <h3>✅ Combinação Gerada com Sucesso!</h3>
+                    <h3>✅ Combinação Gerada</h3>
                     <p><strong>Estratégia:</strong> ${strategyNames[strategy]}</p>
+                    <p><strong>Unicidade Dinâmica:</strong> ${score.toFixed(1)}%</p>
+                    <small>Intervalo Base: ${minFreq} - ${maxFreq} saídas</small>
                 </div>
                 
                 <div class="numbers-display">
@@ -726,36 +841,26 @@ PEDRO 07 14 21 28 35 42"></textarea>
                 
                 <div class="stats-grid">
                     <div class="stat-card">
-                        <div class="stat-value">${freqs.reduce((a, b) => a + b, 0)}</div>
-                        <div class="stat-label">Saídas Totais</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value">${avgFreq.toFixed(1)}</div>
-                        <div class="stat-label">Média de Saídas</div>
-                    </div>
-                    <div class="stat-card">
                         <div class="stat-value">${numbers.filter(n => n % 2 === 1).length}</div>
-                        <div class="stat-label">Números Ímpares</div>
+                        <div class="stat-label">Ímpares</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-value">${numbers.filter(n => n % 2 === 0).length}</div>
-                        <div class="stat-label">Números Pares</div>
+                        <div class="stat-label">Pares</div>
                     </div>
-                </div>
-                
-                <div class="info-box">
-                    <h4>Frequência Individual:</h4>
-                    ${numbers.map(n => `
-                        <p><strong>${String(n).padStart(2, '0')}:</strong> Sorteado ${numberFrequency[n]} vezes</p>
-                    `).join('')}
                 </div>
             `;
             
             document.getElementById('generatedResult').innerHTML = html;
         }
 
-        // Analisar jogos
         function analyzeGames() {
+            if(historicalData.length === 0) {
+                alert('Carregue os dados primeiro.');
+                switchTab('stats');
+                return;
+            }
+
             const input = document.getElementById('gamesInput').value.trim();
             if (!input) {
                 alert('Por favor, insira pelo menos um jogo.');
@@ -766,13 +871,13 @@ PEDRO 07 14 21 28 35 42"></textarea>
             const results = [];
             
             lines.forEach(line => {
-                const parts = line.trim().split(/\s+/);
-                if (parts.length < 7) return;
+                const parts = line.trim().split(/[\s,.-]+/);
+                const name = isNaN(parseInt(parts[0])) ? parts[0] : "Jogo";
                 
-                const name = parts[0];
-                const numbers = parts.slice(1, 7)
+                const numbers = parts
                     .map(n => parseInt(n))
                     .filter(n => !isNaN(n) && n >= 1 && n <= 60)
+                    .slice(0, 6) // Pega os 6 primeiros válidos
                     .sort((a, b) => a - b);
                 
                 if (numbers.length !== 6) return;
@@ -781,8 +886,10 @@ PEDRO 07 14 21 28 35 42"></textarea>
                 const freqs = numbers.map(n => numberFrequency[n] || 0);
                 const totalFreq = freqs.reduce((a, b) => a + b, 0);
                 const avgFreq = totalFreq / 6;
+                const uniquenessScore = calculateUniqueness(numbers);
+                
+                // Variância
                 const variance = freqs.reduce((sum, f) => sum + Math.pow(f - avgFreq, 2), 0) / 6;
-                const uniquenessScore = isDuplicate ? 0 : (100 - (avgFreq / Math.max(...Object.values(numberFrequency))) * 100);
                 
                 results.push({
                     name,
@@ -801,17 +908,19 @@ PEDRO 07 14 21 28 35 42"></textarea>
 
         function displayAnalysis(results) {
             results.sort((a, b) => b.uniquenessScore - a.uniquenessScore);
-            
             const medals = ['🥇', '🥈', '🥉'];
             
-            let html = '<h3>📊 Resultados da Análise</h3>';
+            let html = '<h3>📊 Resultados da Análise</h3><div class="ranking">';
             
-            html += '<div class="ranking">';
             results.forEach((result, index) => {
                 const medal = index < 3 ? medals[index] : `${index + 1}º`;
                 const statusClass = result.isDuplicate ? 'duplicate' : 'unique';
-                const statusText = result.isDuplicate ? '❌ JÁ SORTEADO' : '✅ COMBINAÇÃO ÚNICA';
+                const statusText = result.isDuplicate ? '❌ JÁ SORTEADO' : '✅ ÚNICO';
                 
+                // Cor da barra baseada no score dinâmico
+                const scoreColor = result.uniquenessScore > 75 ? 'var(--success-color)' : 
+                                 result.uniquenessScore < 30 ? 'var(--danger-color)' : 'var(--warning-color)';
+
                 html += `
                     <div class="result-item ${statusClass}">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
@@ -831,30 +940,25 @@ PEDRO 07 14 21 28 35 42"></textarea>
                         
                         <div class="stats-grid">
                             <div class="stat-card">
-                                <div class="stat-value">${result.uniquenessScore.toFixed(1)}</div>
-                                <div class="stat-label">Nota de Unicidade</div>
+                                <div class="stat-value" style="color:${scoreColor}">${result.uniquenessScore.toFixed(1)}%</div>
+                                <div class="stat-label">Unicidade</div>
                             </div>
                             <div class="stat-card">
-                                <div class="stat-value">${result.totalFreq}</div>
-                                <div class="stat-label">Saídas Totais</div>
-                            </div>
-                            <div class="stat-card">
-                                <div class="stat-value">${result.avgFreq.toFixed(1)}</div>
-                                <div class="stat-label">Média de Saídas</div>
-                            </div>
-                            <div class="stat-card">
-                                <div class="stat-value">${result.variance.toFixed(1)}</div>
-                                <div class="stat-label">Variância</div>
+                                <div class="stat-value">${result.avgFreq.toFixed(0)}</div>
+                                <div class="stat-label">Média Saídas</div>
                             </div>
                         </div>
                         
                         <div class="info-box">
-                            <h4>Frequência por Número:</h4>
+                            <h4>Frequência Individual (vs Máx ${maxFreq}):</h4>
                             ${result.numbers.map((n, i) => `
-                                <div>
-                                    <strong>${String(n).padStart(2, '0')}:</strong> ${result.freqs[i]} saídas
+                                <div style="margin-bottom:5px">
+                                    <div style="display:flex; justify-content:space-between">
+                                        <strong>${String(n).padStart(2, '0')}</strong>
+                                        <span>${result.freqs[i]} saídas</span>
+                                    </div>
                                     <div class="progress-bar">
-                                        <div class="progress-fill" style="width: ${(result.freqs[i] / Math.max(...Object.values(numberFrequency))) * 100}%"></div>
+                                        <div class="progress-fill" style="width: ${(result.freqs[i] / maxFreq) * 100}%"></div>
                                     </div>
                                 </div>
                             `).join('')}
@@ -867,11 +971,12 @@ PEDRO 07 14 21 28 35 42"></textarea>
             document.getElementById('analysisResult').innerHTML = html;
         }
 
-        // Atualizar estatísticas
+        // ------------------------------------------------------------------
+        // ESTATÍSTICAS E UI
+        // ------------------------------------------------------------------
+
         function updateStats() {
-            const sorted = Object.entries(numberFrequency)
-                .sort((a, b) => b[1] - a[1]);
-            
+            const sorted = Object.entries(numberFrequency).sort((a, b) => b[1] - a[1]);
             const top10 = sorted.slice(0, 10);
             const bottom10 = sorted.slice(-10).reverse();
             
@@ -879,24 +984,20 @@ PEDRO 07 14 21 28 35 42"></textarea>
                 <div class="stats-grid">
                     <div class="stat-card">
                         <div class="stat-value">${historicalData.length}</div>
-                        <div class="stat-label">Sorteios Realizados</div>
+                        <div class="stat-label">Sorteios</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-value">${sorted[0][1]}</div>
-                        <div class="stat-label">Maior Frequência</div>
+                        <div class="stat-value">${maxFreq}</div>
+                        <div class="stat-label">Teto (Max)</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-value">${sorted[sorted.length - 1][1]}</div>
-                        <div class="stat-label">Menor Frequência</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value">${(Object.values(numberFrequency).reduce((a,b) => a+b, 0) / 60).toFixed(1)}</div>
-                        <div class="stat-label">Média Geral</div>
+                        <div class="stat-value">${minFreq}</div>
+                        <div class="stat-label">Piso (Min)</div>
                     </div>
                 </div>
                 
                 <div class="card">
-                    <h3>🔥 Top 10 - Números Mais Sorteados</h3>
+                    <h3>🔥 Top 10 - Mais Sorteados (Teto)</h3>
                     ${top10.map((entry, i) => `
                         <div class="rank-item">
                             <div>
@@ -904,11 +1005,9 @@ PEDRO 07 14 21 28 35 42"></textarea>
                                 <strong>Número ${String(entry[0]).padStart(2, '0')}</strong>
                             </div>
                             <div>
-                                <span style="font-size: 1.2rem; font-weight: bold; color: var(--accent-color);">
-                                    ${entry[1]} saídas
-                                </span>
-                                <div class="progress-bar" style="width: 200px;">
-                                    <div class="progress-fill" style="width: ${(entry[1] / sorted[0][1]) * 100}%"></div>
+                                <strong>${entry[1]}</strong>
+                                <div class="progress-bar" style="width: 150px; display:inline-block; margin-left:10px; vertical-align:middle">
+                                    <div class="progress-fill" style="width: ${(entry[1] / maxFreq) * 100}%"></div>
                                 </div>
                             </div>
                         </div>
@@ -916,7 +1015,7 @@ PEDRO 07 14 21 28 35 42"></textarea>
                 </div>
                 
                 <div class="card">
-                    <h3>❄️ Top 10 - Números Menos Sorteados</h3>
+                    <h3>❄️ Top 10 - Menos Sorteados (Piso)</h3>
                     ${bottom10.map((entry, i) => `
                         <div class="rank-item">
                             <div>
@@ -924,11 +1023,9 @@ PEDRO 07 14 21 28 35 42"></textarea>
                                 <strong>Número ${String(entry[0]).padStart(2, '0')}</strong>
                             </div>
                             <div>
-                                <span style="font-size: 1.2rem; font-weight: bold; color: var(--text-secondary);">
-                                    ${entry[1]} saídas
-                                </span>
-                                <div class="progress-bar" style="width: 200px;">
-                                    <div class="progress-fill" style="width: ${(entry[1] / sorted[0][1]) * 100}%"></div>
+                                <strong>${entry[1]}</strong>
+                                <div class="progress-bar" style="width: 150px; display:inline-block; margin-left:10px; vertical-align:middle">
+                                    <div class="progress-fill" style="width: ${(entry[1] / maxFreq) * 100}%"></div>
                                 </div>
                             </div>
                         </div>
@@ -939,7 +1036,6 @@ PEDRO 07 14 21 28 35 42"></textarea>
             document.getElementById('statsContent').innerHTML = html;
         }
 
-        // Trocar tema
         function toggleTheme() {
             const html = document.documentElement;
             const currentTheme = html.getAttribute('data-theme');
@@ -948,7 +1044,6 @@ PEDRO 07 14 21 28 35 42"></textarea>
             localStorage.setItem('theme', newTheme);
         }
 
-        // Trocar aba
         function switchTab(tabName) {
             document.querySelectorAll('.tab-content').forEach(tab => {
                 tab.classList.remove('active');
@@ -961,19 +1056,18 @@ PEDRO 07 14 21 28 35 42"></textarea>
             event.target.classList.add('active');
         }
 
-        // Atualizar descrição da estratégia
         document.getElementById('strategy').addEventListener('change', function(e) {
             const descriptions = {
-                'avoid_history': 'Garante 100% de unicidade - nunca foi sorteada antes.',
-                'least_drawn': 'Prioriza números que saíram menos vezes (teoria da compensação).',
-                'most_drawn': 'Prioriza números mais sorteados (padrão de frequência).',
-                'balanced': 'Mistura números quentes e frios para equilíbrio.',
-                'fibonacci': 'Usa a sequência de Fibonacci (1,2,3,5,8,13,21,34,55).',
-                'prime': 'Prioriza números primos (teoria matemática).',
-                'hot_cold': 'Combina 50% de números quentes e 50% de frios.',
-                'random_weighted': 'Aleatório ponderado pela frequência histórica.'
+                'avoid_history': 'Gera números aleatórios, validando apenas se já saíram juntos.',
+                'least_drawn': 'Prioriza os números mais próximos do piso (menos sorteados).',
+                'most_drawn': 'Prioriza os números mais próximos do teto (mais sorteados).',
+                'balanced': 'Pega números com frequência mediana para equilibrar.',
+                'fibonacci': 'Tenta usar números da sequência Fibonacci (1,2,3,5,8...).',
+                'prime': 'Prioriza o uso de números primos.',
+                'hot_cold': 'Mistura 50% de números quentes (teto) e 50% frios (piso).',
+                'random_weighted': 'Roleta viciada: números que saíram mais têm mais chance.'
             };
-            document.getElementById('strategyHelp').textContent = descriptions[e.target.value];
+            document.getElementById('strategyHelp').textContent = descriptions[e.target.value] || '';
         });
 
         // Inicializar
@@ -982,8 +1076,6 @@ PEDRO 07 14 21 28 35 42"></textarea>
             document.documentElement.setAttribute('data-theme', savedTheme);
             
             loadHistoricalData();
-            
-            // Trigger inicial da descrição
             document.getElementById('strategy').dispatchEvent(new Event('change'));
         });
     </script>
