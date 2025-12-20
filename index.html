@@ -347,6 +347,83 @@
             width: auto;
         }
 
+        /* Estilos para Modo Compacto */
+        .group-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            padding: 15px;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            margin-bottom: 5px;
+            border-left: 4px solid var(--accent-color);
+        }
+        
+        .group-header:hover {
+            filter: brightness(0.95);
+        }
+
+        .group-details {
+            display: none;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            margin-bottom: 15px;
+            animation: slideDown 0.3s ease;
+        }
+
+        .group-details.open {
+            display: block;
+        }
+
+        .compact-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .compact-row:last-child {
+            border-bottom: none;
+        }
+
+        .compact-nums {
+            display: flex;
+            gap: 5px;
+        }
+
+        .compact-ball {
+            width: 30px;
+            height: 30px;
+            font-size: 0.9rem;
+            background: #e9ecef;
+            color: #495057;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: white;
+        }
+        .badge-success { background: var(--success-color); }
+        .badge-warning { background: var(--warning-color); }
+        .badge-danger { background: var(--danger-color); }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
         @media (max-width: 768px) {
             h1 {
                 font-size: 1.5rem;
@@ -355,6 +432,11 @@
                 width: 50px;
                 height: 50px;
                 font-size: 1.2rem;
+            }
+            .compact-row {
+                flex-direction: column;
+                gap: 10px;
+                align-items: flex-start;
             }
         }
     </style>
@@ -415,10 +497,15 @@
                 
                 <div class="form-group">
                     <label>Insira os jogos (um por linha):</label>
-                    <textarea id="gamesInput" placeholder="JOAO 05 12 23 34 45 56
-MARIA 01 10 20 30 40 50
-PEDRO 07 14 21 28 35 42"></textarea>
-                    <p class="help-text">Formato: NOME numero1 numero2 numero3 numero4 numero5 numero6</p>
+                    <textarea id="gamesInput" placeholder="JOAO DA SILVA 05 12 23 34 45 56
+BOLAO-FIRMA 01-10-20-30-40-50
+MARIA: 07, 14, 21, 28, 35, 42"></textarea>
+                    <p class="help-text">Aceita formatos variados: NOME (espaço, hífen ou dois pontos) NUMEROS</p>
+                </div>
+
+                <div class="checkbox-group" style="margin-bottom: 20px;">
+                    <input type="checkbox" id="compactMode" onchange="renderAnalysis()">
+                    <label for="compactMode">Modo Compacto (Agrupar por Nome)</label>
                 </div>
 
                 <button class="btn" onclick="analyzeGames()">🔍 Analisar Jogos</button>
@@ -442,6 +529,7 @@ PEDRO 07 14 21 28 35 42"></textarea>
         let numberFrequency = {};
         let minFreq = 0;
         let maxFreq = 0;
+        let lastAnalysisResults = []; // Armazena resultados para re-renderização
 
         // ------------------------------------------------------------------
         // SISTEMA DE CARREGAMENTO DE DADOS (ROBUSTO COM FALLBACK)
@@ -868,30 +956,23 @@ PEDRO 07 14 21 28 35 42"></textarea>
             }
             
             const lines = input.split('\n').filter(l => l.trim());
-            const results = [];
+            lastAnalysisResults = []; // Limpa resultados anteriores
             
             lines.forEach(line => {
-                const parts = line.trim().split(/[\s,.-]+/);
-                const name = isNaN(parseInt(parts[0])) ? parts[0] : "Jogo";
-                
-                const numbers = parts
-                    .map(n => parseInt(n))
-                    .filter(n => !isNaN(n) && n >= 1 && n <= 60)
-                    .slice(0, 6) // Pega os 6 primeiros válidos
-                    .sort((a, b) => a - b);
-                
-                if (numbers.length !== 6) return;
+                // Parser inteligente para lidar com formatos variados
+                const parsed = parseLine(line);
+                if (!parsed) return;
+
+                const { name, numbers } = parsed;
                 
                 const isDuplicate = combinationExists(numbers);
                 const freqs = numbers.map(n => numberFrequency[n] || 0);
                 const totalFreq = freqs.reduce((a, b) => a + b, 0);
                 const avgFreq = totalFreq / 6;
                 const uniquenessScore = calculateUniqueness(numbers);
-                
-                // Variância
                 const variance = freqs.reduce((sum, f) => sum + Math.pow(f - avgFreq, 2), 0) / 6;
                 
-                results.push({
+                lastAnalysisResults.push({
                     name,
                     numbers,
                     isDuplicate,
@@ -903,21 +984,135 @@ PEDRO 07 14 21 28 35 42"></textarea>
                 });
             });
             
-            displayAnalysis(results);
+            renderAnalysis();
         }
 
-        function displayAnalysis(results) {
+        // Novo Parser de Linha Robusto
+        function parseLine(line) {
+            // Tokeniza por caracteres não alfanuméricos comuns (mantendo acentos)
+            const tokens = line.trim().split(/[\s,\.\-\t:;]+/);
+            
+            // Procura por uma sequência de 6 números distintos entre 1-60
+            let startIndex = -1;
+            
+            for (let i = 0; i <= tokens.length - 6; i++) {
+                let candidates = [];
+                let isSequence = true;
+                
+                for (let j = 0; j < 6; j++) {
+                    const val = parseInt(tokens[i+j]);
+                    if (isNaN(val) || val < 1 || val > 60) {
+                        isSequence = false;
+                        break;
+                    }
+                    candidates.push(val);
+                }
+                
+                // Verifica se são 6 números DISTINTOS (ex: evita "1, 1, 1...")
+                if (isSequence && new Set(candidates).size === 6) {
+                    startIndex = i;
+                    break; 
+                }
+            }
+
+            if (startIndex === -1) return null;
+
+            // O nome é tudo antes da sequência numérica
+            let nameTokens = tokens.slice(0, startIndex);
+            let name = nameTokens.join(" ");
+            if (!name) name = "Jogo " + (lastAnalysisResults.length + 1);
+            
+            const numbers = tokens.slice(startIndex, startIndex + 6)
+                                .map(n => parseInt(n))
+                                .sort((a,b)=>a-b);
+            
+            return { name, numbers };
+        }
+
+        function renderAnalysis() {
+            const results = lastAnalysisResults;
+            const compactMode = document.getElementById('compactMode').checked;
+            const container = document.getElementById('analysisResult');
+            
+            if (results.length === 0) {
+                container.innerHTML = '<p style="text-align:center; color:var(--text-secondary)">Nenhum jogo válido identificado.</p>';
+                return;
+            }
+
+            if (compactMode) {
+                renderCompactView(results, container);
+            } else {
+                renderDetailedView(results, container);
+            }
+        }
+
+        function renderCompactView(results, container) {
+            // Agrupar por nome
+            const groups = {};
+            results.forEach(r => {
+                if (!groups[r.name]) groups[r.name] = [];
+                groups[r.name].push(r);
+            });
+
+            let html = '<h3>📊 Visão Compacta (Agrupada)</h3>';
+
+            for (const [name, games] of Object.entries(groups)) {
+                const avgScore = games.reduce((acc, g) => acc + g.uniquenessScore, 0) / games.length;
+                const uniqueId = 'group-' + name.replace(/\s+/g, '-').toLowerCase() + '-' + Math.random().toString(36).substr(2, 5);
+                
+                // Cores baseadas na média do score
+                const scoreColor = avgScore > 75 ? 'var(--success-color)' : avgScore < 30 ? 'var(--danger-color)' : 'var(--warning-color)';
+                const borderColor = avgScore > 75 ? 'var(--success-color)' : avgScore < 30 ? 'var(--danger-color)' : 'var(--accent-color)';
+
+                html += `
+                    <div class="compact-group">
+                        <div class="group-header" onclick="toggleGroup('${uniqueId}')" style="border-left-color: ${borderColor}">
+                            <div>
+                                <strong>${name}</strong>
+                                <span style="font-size:0.9rem; color:var(--text-secondary); margin-left:10px">(${games.length} jogos)</span>
+                            </div>
+                            <div style="font-weight:bold; color:${scoreColor}">
+                                Média: ${avgScore.toFixed(1)}%
+                            </div>
+                        </div>
+                        <div id="${uniqueId}" class="group-details">
+                            ${games.map(g => {
+                                const gameColor = g.uniquenessScore > 75 ? 'success' : g.uniquenessScore < 30 ? 'danger' : 'warning';
+                                return `
+                                <div class="compact-row">
+                                    <div class="compact-nums">
+                                        ${g.numbers.map(n => `<div class="compact-ball">${String(n).padStart(2,'0')}</div>`).join('')}
+                                    </div>
+                                    <div style="text-align:right">
+                                        <span class="badge badge-${gameColor}">${g.uniquenessScore.toFixed(0)}%</span>
+                                        ${g.isDuplicate ? '<span class="badge badge-danger">!</span>' : ''}
+                                    </div>
+                                </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+            container.innerHTML = html;
+        }
+
+        function toggleGroup(id) {
+            const el = document.getElementById(id);
+            if (el) el.classList.toggle('open');
+        }
+
+        function renderDetailedView(results, container) {
             results.sort((a, b) => b.uniquenessScore - a.uniquenessScore);
             const medals = ['🥇', '🥈', '🥉'];
             
-            let html = '<h3>📊 Resultados da Análise</h3><div class="ranking">';
+            let html = '<h3>📊 Resultados Detalhados</h3><div class="ranking">';
             
             results.forEach((result, index) => {
                 const medal = index < 3 ? medals[index] : `${index + 1}º`;
                 const statusClass = result.isDuplicate ? 'duplicate' : 'unique';
                 const statusText = result.isDuplicate ? '❌ JÁ SORTEADO' : '✅ ÚNICO';
                 
-                // Cor da barra baseada no score dinâmico
                 const scoreColor = result.uniquenessScore > 75 ? 'var(--success-color)' : 
                                  result.uniquenessScore < 30 ? 'var(--danger-color)' : 'var(--warning-color)';
 
@@ -948,27 +1143,17 @@ PEDRO 07 14 21 28 35 42"></textarea>
                                 <div class="stat-label">Média Saídas</div>
                             </div>
                         </div>
-                        
-                        <div class="info-box">
-                            <h4>Frequência Individual (vs Máx ${maxFreq}):</h4>
-                            ${result.numbers.map((n, i) => `
-                                <div style="margin-bottom:5px">
-                                    <div style="display:flex; justify-content:space-between">
-                                        <strong>${String(n).padStart(2, '0')}</strong>
-                                        <span>${result.freqs[i]} saídas</span>
-                                    </div>
-                                    <div class="progress-bar">
-                                        <div class="progress-fill" style="width: ${(result.freqs[i] / maxFreq) * 100}%"></div>
-                                    </div>
-                                </div>
-                            `).join('')}
-                        </div>
                     </div>
                 `;
             });
             html += '</div>';
-            
-            document.getElementById('analysisResult').innerHTML = html;
+            container.innerHTML = html;
+        }
+
+        function displayAnalysis(results) {
+            // Deprecated - kept for compatibility but logic moved to renderAnalysis
+            lastAnalysisResults = results;
+            renderAnalysis();
         }
 
         // ------------------------------------------------------------------
