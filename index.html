@@ -3,1266 +3,768 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simulador Mega Sena Pro</title>
+    <title>Lista de Pecados - Confessionário</title>
     <style>
-        :root {
-            --bg-primary: #ffffff;
-            --bg-secondary: #f8f9fa;
-            --bg-card: #ffffff;
-            --text-primary: #212529;
-            --text-secondary: #6c757d;
-            --border-color: #dee2e6;
-            --accent-color: #0d6efd;
-            --accent-hover: #0b5ed7;
-            --success-color: #198754;
-            --warning-color: #ffc107;
-            --danger-color: #dc3545;
-            --shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-
-        [data-theme="dark"] {
-            --bg-primary: #1a1a1a;
-            --bg-secondary: #2d2d2d;
-            --bg-card: #242424;
-            --text-primary: #e9ecef;
-            --text-secondary: #adb5bd;
-            --border-color: #495057;
-            --shadow: 0 2px 8px rgba(0,0,0,0.3);
-        }
-
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            transition: all 0.3s ease;
-            line-height: 1.6;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 12px;
+            overflow-x: hidden;
         }
 
         .container {
-            max-width: 1400px;
+            max-width: 900px;
             margin: 0 auto;
-            padding: 20px;
-        }
-
-        header {
-            background: var(--bg-card);
-            padding: 20px;
-            border-radius: 12px;
-            margin-bottom: 30px;
-            box-shadow: var(--shadow);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 15px;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(10px);
+            border-radius: 24px;
+            padding: 24px 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
         }
 
         h1 {
-            font-size: 2rem;
+            text-align: center;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+            margin-bottom: 8px;
+            font-size: clamp(1.5rem, 5vw, 2.2rem);
+            font-weight: 700;
+            letter-spacing: -0.5px;
         }
 
-        .theme-toggle {
-            background: var(--bg-secondary);
-            border: 2px solid var(--border-color);
-            border-radius: 25px;
-            padding: 8px 16px;
-            cursor: pointer;
-            font-size: 1.2rem;
-            transition: all 0.3s ease;
+        .subtitle {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+            margin-bottom: 24px;
+            font-size: clamp(0.8rem, 3vw, 0.95rem);
+            line-height: 1.5;
+            padding: 0 16px;
         }
 
-        .theme-toggle:hover {
-            transform: scale(1.1);
-        }
-
-        .tabs {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 30px;
-            flex-wrap: wrap;
-        }
-
-        .tab-btn {
-            padding: 12px 24px;
-            background: var(--bg-card);
-            border: 2px solid var(--border-color);
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s ease;
+        .counter {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+            border-radius: 16px;
             font-size: 1rem;
-            color: var(--text-primary);
+            font-weight: 600;
+            color: #667eea;
         }
 
-        .tab-btn.active {
-            background: var(--accent-color);
-            color: white;
-            border-color: var(--accent-color);
+        .pecados-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+            gap: 8px;
+            margin-bottom: 24px;
         }
 
-        .tab-content {
+        .pecado-item {
+            display: flex;
+            align-items: center;
+            padding: 14px 12px;
+            border-radius: 12px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: #f8f9fa;
+            border: 2px solid transparent;
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .pecado-item:active {
+            transform: scale(0.98);
+        }
+
+        .pecado-item.checked {
+            background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+            border-color: #667eea;
+        }
+
+        .pecado-item input[type="checkbox"] {
+            margin-right: 12px;
+            width: 22px;
+            height: 22px;
+            cursor: pointer;
+            accent-color: #667eea;
+            flex-shrink: 0;
+        }
+
+        .pecado-item label {
+            cursor: pointer;
+            font-size: clamp(0.9rem, 3.5vw, 1rem);
+            color: #333;
+            font-weight: 500;
+            flex: 1;
+        }
+
+        .significado {
             display: none;
-            animation: fadeIn 0.3s ease;
+            margin-top: 8px;
+            padding: 12px;
+            background: rgba(102, 126, 234, 0.08);
+            border-left: 3px solid #667eea;
+            border-radius: 8px;
+            font-size: clamp(0.8rem, 3vw, 0.9rem);
+            color: #555;
+            line-height: 1.5;
+            animation: slideDown 0.3s ease-out;
         }
 
-        .tab-content.active {
+        .significado.show {
             display: block;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .significado {
+            display: none;
+            margin-top: 8px;
+            padding: 12px;
+            background: rgba(102, 126, 234, 0.08);
+            border-left: 3px solid #667eea;
+            border-radius: 8px;
+            font-size: clamp(0.8rem, 3vw, 0.9rem);
+            color: #555;
+            line-height: 1.5;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        .significado.show {
+            display: block;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .btn-container {
+            position: sticky;
+            bottom: 12px;
+            text-align: center;
+            margin-top: 24px;
+            padding-top: 16px;
+        }
+
+        .btn-consultar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 18px 48px;
+            font-size: clamp(1rem, 4vw, 1.2rem);
+            font-weight: 600;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            width: 100%;
+            max-width: 300px;
+        }
+
+        .btn-consultar:active {
+            transform: scale(0.96);
+        }
+
+        @media (hover: hover) {
+            .pecado-item:hover {
+                background: linear-gradient(135deg, #667eea10 0%, #764ba210 100%);
+                transform: translateX(4px);
+            }
+            
+            .btn-consultar:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 12px 32px rgba(102, 126, 234, 0.5);
+            }
+        }
+
+        .resultado {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .resultado.show {
+            display: flex;
+            animation: fadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
         }
 
-        .card {
-            background: var(--bg-card);
-            padding: 25px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-            box-shadow: var(--shadow);
-        }
-
-        .card h2 {
-            margin-bottom: 20px;
-            color: var(--accent-color);
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: var(--text-secondary);
-        }
-
-        select, textarea, input[type="text"], input[type="number"] {
-            width: 100%;
-            padding: 12px;
-            background: var(--bg-secondary);
-            border: 2px solid var(--border-color);
-            border-radius: 8px;
-            color: var(--text-primary);
-            font-size: 1rem;
-            transition: all 0.3s ease;
-        }
-
-        /* Estilo específico para input file */
-        input[type="file"] {
-            width: 100%;
-            padding: 15px;
-            border: 2px dashed var(--accent-color);
-            border-radius: 8px;
-            background: var(--bg-secondary);
-            cursor: pointer;
+        .resultado-content {
             text-align: center;
-        }
-
-        select:focus, textarea:focus, input:focus {
-            outline: none;
-            border-color: var(--accent-color);
-        }
-
-        textarea {
-            min-height: 150px;
-            font-family: 'Courier New', monospace;
-            resize: vertical;
-        }
-
-        .btn {
-            padding: 12px 24px;
-            background: var(--accent-color);
             color: white;
+            padding: 24px;
+            max-width: 500px;
+            animation: slideUp 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(30px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .resultado-titulo {
+            font-size: clamp(2rem, 8vw, 3.5rem);
+            margin-bottom: 16px;
+            text-shadow: 2px 2px 20px rgba(0,0,0,0.3);
+            font-weight: 700;
+            letter-spacing: -1px;
+            line-height: 1.2;
+        }
+
+        .resultado-subtitulo {
+            font-size: clamp(1.2rem, 5vw, 2rem);
+            margin-bottom: 32px;
+            opacity: 0.95;
+            font-weight: 600;
+        }
+
+        .resultado-pontuacao {
+            font-size: clamp(3.5rem, 15vw, 6rem);
+            font-weight: 800;
+            margin-bottom: 24px;
+            text-shadow: 4px 4px 20px rgba(0,0,0,0.4);
+            letter-spacing: -2px;
+        }
+
+        .resultado-mensagem {
+            font-size: clamp(1rem, 4vw, 1.5rem);
+            margin-bottom: 32px;
+            font-style: italic;
+            line-height: 1.5;
+            opacity: 0.95;
+        }
+
+        .btn-voltar {
+            background: white;
+            color: #667eea;
             border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 1rem;
+            padding: 16px 40px;
+            font-size: clamp(1rem, 4vw, 1.2rem);
             font-weight: 600;
-            transition: all 0.3s ease;
-            display: inline-block;
-        }
-
-        .btn:hover {
-            background: var(--accent-hover);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);
-        }
-
-        .btn:active {
-            transform: translateY(0);
-        }
-
-        .btn-success {
-            background: var(--success-color);
-        }
-
-        .btn-success:hover {
-            background: #157347;
-        }
-
-        .numbers-display {
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-            flex-wrap: wrap;
-            margin: 25px 0;
-        }
-
-        .number-ball {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-            font-weight: bold;
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-            animation: popIn 0.5s ease;
-        }
-
-        @keyframes popIn {
-            0% { transform: scale(0); }
-            50% { transform: scale(1.2); }
-            100% { transform: scale(1); }
-        }
-
-        .info-box {
-            background: var(--bg-secondary);
-            padding: 15px;
-            border-radius: 8px;
-            margin: 15px 0;
-            border-left: 4px solid var(--accent-color);
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin: 20px 0;
-        }
-
-        .stat-card {
-            background: var(--bg-secondary);
-            padding: 15px;
-            border-radius: 8px;
-            text-align: center;
-        }
-
-        .stat-value {
-            font-size: 2rem;
-            font-weight: bold;
-            color: var(--accent-color);
-        }
-
-        .stat-label {
-            color: var(--text-secondary);
-            font-size: 0.9rem;
-        }
-
-        .result-item {
-            background: var(--bg-secondary);
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            border-left: 4px solid var(--accent-color);
-        }
-
-        .result-item.unique {
-            border-left-color: var(--success-color);
-        }
-
-        .result-item.duplicate {
-            border-left-color: var(--danger-color);
-        }
-
-        .ranking {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .rank-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: var(--bg-secondary);
-            padding: 15px;
-            border-radius: 8px;
-        }
-
-        .rank-medal {
-            font-size: 1.5rem;
-            margin-right: 10px;
-        }
-
-        .progress-bar {
-            height: 8px;
-            background: var(--bg-primary); /* Ajustado para contraste */
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
-            overflow: hidden;
-            margin: 10px 0;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, var(--accent-color), var(--success-color));
-            transition: width 0.5s ease;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 40px;
-            color: var(--text-secondary);
-        }
-
-        .help-text {
-            font-size: 0.9rem;
-            color: var(--text-secondary);
-            margin-top: 5px;
-        }
-
-        .checkbox-group {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin: 10px 0;
-        }
-
-        input[type="checkbox"] {
-            width: auto;
-        }
-
-        /* Estilos para Modo Compacto */
-        .group-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            border-radius: 50px;
             cursor: pointer;
-            padding: 15px;
-            background: var(--bg-secondary);
-            border-radius: 8px;
-            margin-bottom: 5px;
-            border-left: 4px solid var(--accent-color);
-        }
-        
-        .group-header:hover {
-            filter: brightness(0.95);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        .group-details {
-            display: none;
-            padding: 10px;
-            border: 1px solid var(--border-color);
-            border-top: none;
-            border-radius: 0 0 8px 8px;
-            margin-bottom: 15px;
-            animation: slideDown 0.3s ease;
+        .btn-voltar:active {
+            transform: scale(0.96);
         }
 
-        .group-details.open {
-            display: block;
+        @media (hover: hover) {
+            .btn-voltar:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 12px 32px rgba(0,0,0,0.4);
+            }
         }
 
-        .compact-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 8px;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .compact-row:last-child {
-            border-bottom: none;
-        }
-
-        .compact-nums {
-            display: flex;
-            gap: 5px;
-        }
-
-        .compact-ball {
-            width: 30px;
-            height: 30px;
-            font-size: 0.9rem;
-            background: #e9ecef;
-            color: #495057;
+        .confete {
+            position: fixed;
+            width: 8px;
+            height: 8px;
             border-radius: 50%;
+            pointer-events: none;
+            z-index: 999;
+        }
+
+        @keyframes cair {
+            to {
+                transform: translateY(100vh) rotate(720deg);
+                opacity: 0;
+            }
+        }
+
+        .popup-overlay {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 2000;
+            max-width: 400px;
+            width: calc(100% - 40px);
+        }
+
+        .popup-overlay.show {
+            display: block;
+            animation: slideInRight 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .popup-content {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            border-left: 4px solid #667eea;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(120%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOutRight {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(120%);
+                opacity: 0;
+            }
+        }
+
+        .popup-overlay.closing {
+            animation: slideOutRight 0.3s ease-out forwards;
+        }
+
+        .popup-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+            gap: 12px;
+        }
+
+        .popup-titulo {
+            font-size: clamp(1.1rem, 4vw, 1.3rem);
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            flex: 1;
+            line-height: 1.3;
+        }
+
+        .popup-close {
+            background: transparent;
+            border: none;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 18px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-weight: bold;
+            transition: all 0.2s;
+            flex-shrink: 0;
+            color: #999;
         }
 
-        .badge {
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 0.8rem;
-            font-weight: bold;
-            color: white;
-        }
-        .badge-success { background: var(--success-color); }
-        .badge-warning { background: var(--warning-color); }
-        .badge-danger { background: var(--danger-color); }
-
-        @keyframes slideDown {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
+        .popup-close:hover {
+            background: #f0f0f0;
+            color: #667eea;
         }
 
-        @media (max-width: 768px) {
-            h1 {
-                font-size: 1.5rem;
+        .popup-close:active {
+            transform: scale(0.9);
+        }
+
+        .popup-texto {
+            font-size: clamp(0.9rem, 3.2vw, 0.95rem);
+            line-height: 1.6;
+            color: #555;
+        }
+
+        @media (max-width: 640px) {
+            body {
+                padding: 8px;
             }
-            .number-ball {
-                width: 50px;
-                height: 50px;
-                font-size: 1.2rem;
+
+            .container {
+                padding: 20px 12px;
+                border-radius: 20px;
             }
-            .compact-row {
-                flex-direction: column;
-                gap: 10px;
-                align-items: flex-start;
+
+            .pecados-grid {
+                grid-template-columns: 1fr;
+                gap: 6px;
+            }
+
+            .pecado-item {
+                padding: 12px 10px;
+            }
+
+            .btn-container {
+                bottom: 8px;
+                padding-top: 12px;
+            }
+
+            .popup-overlay {
+                bottom: 10px;
+                right: 10px;
+                left: 10px;
+                width: auto;
+                max-width: none;
+            }
+
+            .popup-content {
+                max-height: 50vh;
             }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <header>
-            <h1>🎰 Simulador Mega Sena Pro</h1>
-            <button class="theme-toggle" onclick="toggleTheme()">🌓</button>
-        </header>
-
-        <div class="tabs">
-            <button class="tab-btn active" onclick="switchTab('generator')">🎲 Gerador</button>
-            <button class="tab-btn" onclick="switchTab('analyzer')">📊 Analisador</button>
-            <button class="tab-btn" onclick="switchTab('stats')">📈 Estatísticas</button>
+        <h1>Lista de Pecados</h1>
+        <p class="subtitle">"O principal elemento para uma vida livre do pecado é o arrependimento"</p>
+        
+        <div class="counter" id="counter">
+            <span id="counterText">Nenhum pecado selecionado</span>
         </div>
 
-        <!-- TAB: GERADOR -->
-        <div id="generator" class="tab-content active">
-            <div class="card">
-                <h2>Gerador de Combinações Únicas</h2>
-                
-                <div class="form-group">
-                    <label>Estratégia de Geração:</label>
-                    <select id="strategy">
-                        <option value="avoid_history">🚫 Evitar Histórico (100% Único)</option>
-                        <option value="least_drawn">📉 Dezenas Menos Sorteadas (Piso)</option>
-                        <option value="most_drawn">📈 Dezenas Mais Sorteadas (Teto)</option>
-                        <option value="balanced">⚖️ Balanceada (Mix de frequências)</option>
-                        <option value="fibonacci">🔢 Sequência Fibonacci</option>
-                        <option value="prime">🔴 Números Primos</option>
-                        <option value="hot_cold">🔥❄️ Quentes e Frios (50/50)</option>
-                        <option value="random_weighted">🎲 Aleatório Ponderado</option>
-                    </select>
-                    <p class="help-text" id="strategyHelp">Selecione uma estratégia para ver a descrição</p>
-                </div>
+        <div class="pecados-grid" id="pecadosGrid"></div>
 
-                <div class="checkbox-group">
-                    <input type="checkbox" id="avoidConsecutive">
-                    <label for="avoidConsecutive">Evitar números consecutivos</label>
-                </div>
-
-                <div class="checkbox-group">
-                    <input type="checkbox" id="balanceOddEven">
-                    <label for="balanceOddEven">Balancear pares/ímpares (3/3 ou 4/2)</label>
-                </div>
-
-                <button class="btn btn-success" onclick="generateNumbers()">✨ Gerar Combinação</button>
-
-                <div id="generatedResult"></div>
-            </div>
+        <div class="btn-container">
+            <button class="btn-consultar" onclick="consultarDeus()">🙏 Consultar Deus</button>
         </div>
+    </div>
 
-        <!-- TAB: ANALISADOR -->
-        <div id="analyzer" class="tab-content">
-            <div class="card">
-                <h2>Analisador de Jogos (Unicidade Dinâmica)</h2>
-                
-                <div class="form-group">
-                    <label>Insira os jogos (um por linha):</label>
-                    <textarea id="gamesInput" placeholder="JOAO DA SILVA 05 12 23 34 45 56
-BOLAO-FIRMA 01-10-20-30-40-50
-MARIA: 07, 14, 21, 28, 35, 42"></textarea>
-                    <p class="help-text">Aceita formatos variados: NOME (espaço, hífen ou dois pontos) NUMEROS</p>
-                </div>
-
-                <div class="checkbox-group" style="margin-bottom: 20px;">
-                    <input type="checkbox" id="compactMode" onchange="renderAnalysis()">
-                    <label for="compactMode">Modo Compacto (Agrupar por Nome)</label>
-                </div>
-
-                <button class="btn" onclick="analyzeGames()">🔍 Analisar Jogos</button>
-
-                <div id="analysisResult"></div>
+    <div class="popup-overlay" id="popupOverlay">
+        <div class="popup-content">
+            <div class="popup-header">
+                <h2 class="popup-titulo" id="popupTitulo"></h2>
+                <button class="popup-close" onclick="fecharPopup()">✕</button>
             </div>
+            <p class="popup-texto" id="popupTexto"></p>
         </div>
+    </div>
 
-        <!-- TAB: ESTATÍSTICAS -->
-        <div id="stats" class="tab-content">
-            <div class="card">
-                <h2>Estatísticas Globais e Upload</h2>
-                <!-- Área dinâmica de status -->
-                <div id="statsContent" class="loading">Carregando estatísticas...</div>
-            </div>
+    <div class="resultado" id="resultado">
+        <div class="resultado-content">
+            <div class="resultado-titulo" id="resultadoTitulo"></div>
+            <div class="resultado-subtitulo" id="resultadoSubtitulo"></div>
+            <div class="resultado-pontuacao" id="resultadoPontuacao"></div>
+            <div class="resultado-mensagem" id="resultadoMensagem"></div>
+            <button class="btn-voltar" onclick="voltar()">Voltar e Refletir</button>
         </div>
     </div>
 
     <script>
-        let historicalData = [];
-        let numberFrequency = {};
-        let minFreq = 0;
-        let maxFreq = 0;
-        let lastAnalysisResults = []; // Armazena resultados para re-renderização
+        const pecadosData = {
+            "Aborto": "Interrupção voluntária da gravidez, considerado pela Igreja como violação do mandamento 'não matarás' e desrespeito à vida desde a concepção.",
+            "Infidelidade": "Quebra da fidelidade conjugal ou de compromissos estabelecidos, traindo a confiança depositada por Deus e pelo próximo.",
+            "Retenção de Dízimos": "Deixar de ofertar o dízimo (10% dos rendimentos) à igreja, considerado roubo a Deus conforme Malaquias 3:8-10.",
+            "Adultério": "Relação sexual fora do casamento, quebra do sacramento matrimonial e dos votos feitos perante Deus.",
+            "Sem misericórdia": "Falta de compaixão e perdão ao próximo, contrariando o ensinamento de Jesus sobre amar e perdoar os outros.",
+            "Retenção de Ofertas": "Não contribuir com ofertas voluntárias para a obra de Deus, demonstrando falta de generosidade e gratidão.",
+            "Arrogante": "Orgulho excessivo e sentimento de superioridade, considerado um dos pecados capitais que afasta a pessoa de Deus.",
+            "Ladrão": "Tomar para si o que pertence ao outro, violando o mandamento 'não furtarás' e o direito à propriedade.",
+            "Sadismo": "Prazer em causar dor ou sofrimento aos outros, contrário ao mandamento do amor ao próximo.",
+            "Autoritário": "Exercer poder de forma tirânica e opressora, sem humildade ou consideração pela dignidade dos outros.",
+            "Jogos de Azar": "Apostas e jogos que dependem da sorte, considerados confiança em forças aleatórias ao invés da providência divina.",
+            "RPG (jogo da morte)": "Jogos de interpretação considerados por algumas denominações como portais para ocultismo e influências demoníacas.",
+            "Briguento": "Pessoa que provoca conflitos e discórdias constantemente, contrariando o chamado cristão à paz e união.",
+            "Mania de Doença": "Hipocondria ou busca constante por atenção através de doenças imaginárias, demonstrando falta de fé na provisão divina.",
+            "Fornicação": "Relações sexuais fora do casamento, consideradas impureza e desonra ao corpo como templo do Espírito Santo.",
+            "Covarde": "Falta de coragem para testemunhar a fé ou defender os princípios cristãos por medo das consequências.",
+            "Murmuração": "Falar mal dos outros pelas costas, espalhar fofocas e críticas, destruindo a reputação do próximo.",
+            "Suicídio": "Tirar a própria vida, considerado pecado grave pois só Deus tem autoridade sobre a vida e a morte.",
+            "Drogas": "Uso de substâncias entorpecentes que alteram a consciência e destroem o corpo, templo do Espírito Santo.",
+            "Negligência": "Descuido e irresponsabilidade com deveres espirituais, familiares ou sociais confiados por Deus.",
+            "Horóscopo": "Consulta à astrologia para prever o futuro, considerada prática ocultista que substitui a confiança em Deus.",
+            "Feitiçaria": "Prática de magias, bruxarias e invocação de espíritos, expressamente condenada nas escrituras.",
+            "Ódio": "Sentimento intenso de aversão e hostilidade, oposto ao mandamento do amor pregado por Cristo.",
+            "Suborno": "Corrupção através de oferecimento ou recebimento de vantagens indevidas, contrário à justiça divina.",
+            "Imoral": "Conduta contrária aos princípios éticos e morais estabelecidos pela palavra de Deus.",
+            "Pacto Satânico": "Acordo ou aliança com forças demoníacas em troca de benefícios terrenos, rejeição direta a Deus.",
+            "Pirataria": "Roubo de propriedade intelectual, violação do direito alheio ao trabalho e criação.",
+            "Impuro": "Pensamentos, palavras ou ações que contaminam a pureza que Deus espera de seus filhos.",
+            "Preguiça": "Negligência no trabalho e nas obrigações, um dos sete pecados capitais que impede o crescimento espiritual.",
+            "Nova era": "Adesão a filosofias místicas que misturam várias crenças, afastando-se da verdade única em Cristo.",
+            "Injuriador": "Pessoa que ofende e insulta os outros com palavras, ferindo a dignidade criada por Deus.",
+            "Racismo": "Discriminação baseada em raça ou etnia, negação de que todos são criados à imagem e semelhança de Deus.",
+            "Consumismo": "Apego excessivo a bens materiais, fazendo do consumo um ídolo no lugar de Deus.",
+            "Abusador": "Pessoa que usa poder ou força para maltratar física, emocional ou sexualmente os outros.",
+            "Religiosidade": "Prática religiosa vazia e hipócrita, baseada apenas em rituais sem verdadeira transformação do coração.",
+            "Benzimentos": "Práticas supersticiosas de cura ou proteção através de rituais não-bíblicos, forma de ocultismo.",
+            "Agressivo": "Comportamento violento e hostil que contraria a mansidão e autocontrole ensinados por Cristo.",
+            "Amor ao dinheiro": "Avareza e idolatria às riquezas, considerada raiz de todos os males segundo 1 Timóteo 6:10.",
+            "Ciúme Doentio": "Desconfiança obsessiva e possessividade exagerada, demonstrando falta de amor verdadeiro e confiança.",
+            "Simpatias e supertições": "Crenças em rituais mágicos e superstições que substituem a fé genuína em Deus.",
+            "Cartomancia": "Adivinhação através de cartas (tarô, baralho), prática ocultista condenada biblicamente.",
+            "Acomodado": "Conformismo espiritual, falta de zelo e busca pelo crescimento na fé e nas obras.",
+            "Vingativo": "Buscar retaliação e vingança pessoal, contrariando o ensinamento de deixar a justiça nas mãos de Deus.",
+            "Umbanda": "Participação em religiões afro-brasileiras, consideradas idolatria e envolvimento com espíritos malignos.",
+            "Cruel": "Tratar outros com dureza e sem piedade, oposto à compaixão e misericórdia divinas.",
+            "Intolerante": "Falta de paciência e compreensão com as fraquezas e diferenças dos outros.",
+            "Calote": "Não pagar dívidas assumidas, desonestidade que quebra a palavra dada e prejudica o próximo.",
+            "Destruidor": "Causar dano intencional a pessoas, relacionamentos ou propriedades, contrário à chamada para edificar.",
+            "Lascivo": "Sensualidade excessiva e lascívia, pensamentos e desejos sexuais impuros.",
+            "Pichação": "Vandalismo e destruição de propriedade alheia através de grafites não autorizados.",
+            "Coração Duro": "Insensibilidade espiritual e recusa em se arrepender, resistência à ação do Espírito Santo.",
+            "Masturbação": "Autogratificação sexual considerada impureza e falta de autocontrole do corpo.",
+            "Orixás/Vodu": "Adoração a divindades afro-brasileiras ou práticas de vodu, consideradas idolatria e ocultismo.",
+            "Enganador": "Pessoa que usa mentiras e manipulação para tirar vantagem dos outros.",
+            "Mentira": "Falso testemunho e distorção da verdade, violação do mandamento 'não dirás falso testemunho'.",
+            "Estupro": "Violência sexual, crime hediondo que viola a dignidade e o corpo criado à imagem de Deus.",
+            "Faccão": "Divisão e criação de grupos rivais dentro da igreja, contrário à unidade do corpo de Cristo.",
+            "Música Satânica": "Músicas com letras ou simbologias que glorificam o mal, influenciando negativamente o espírito.",
+            "Traição": "Quebra de confiança e lealdade em qualquer relacionamento ou compromisso assumido.",
+            "Vício do Cigarro": "Dependência do tabaco que destrói o corpo, templo do Espírito Santo, e escraviza a vontade.",
+            "Palavrões": "Uso de linguagem obscena e palavras de baixo calão que corrompem a comunicação saudável.",
+            "Assassinato": "Tirar a vida de outro ser humano, violação máxima do mandamento 'não matarás'.",
+            "Hipócrita": "Fingimento e falsidade religiosa, apresentar-se como santo externamente mas ser corrupto internamente.",
+            "Pronografia": "Consumo de material sexualmente explícito que corrompe a mente e alimenta a luxúria.",
+            "Festas idólatras": "Participação em celebrações que honram falsos deuses ou ídolos pagãos.",
+            "Sexo com familiares": "Incesto, relação sexual entre parentes próximos, abominação expressamente condenada na Bíblia.",
+            "Prostituição": "Venda do corpo para fins sexuais, degradação da dignidade humana e do propósito da sexualidade.",
+            "Retenção de primícias": "Não oferecer a Deus os primeiros frutos do trabalho, demonstrando que Ele não é prioridade.",
+            "Injusto": "Agir sem justiça e equidade, favorecendo uns em detrimento de outros contrariando a justiça divina.",
+            "Rancor": "Guardar ressentimento e mágoa no coração, recusando-se a perdoar como Cristo perdoou.",
+            "Pedofilia": "Abuso sexual de crianças, crime hediondo que Jesus condenou severamente ao dizer sobre os pequeninos.",
+            "Acusador": "Pessoa que constantemente acusa e julga os outros, assumindo o papel que cabe apenas a Deus.",
+            "Sado masoquismo": "Práticas sexuais que envolvem dor e humilhação, distorção do propósito divino da sexualidade.",
+            "Idolatria": "Adoração a ídolos, imagens ou qualquer coisa que tome o lugar de Deus no coração.",
+            "Avarento": "Apego excessivo ao dinheiro e bens materiais, mesquinhez que impede a generosidade.",
+            "violento": "Uso de força física para machucar ou intimidar outros, contrário à paz de Cristo.",
+            "Incredulidade": "Falta de fé e confiança em Deus e suas promessas, duvidar da palavra divina.",
+            "Caçoador": "Zombar e ridicularizar os outros, especialmente em questões de fé e valores sagrados.",
+            "Inveja": "Desejo de possuir o que pertence ao outro, um dos sete pecados capitais que corrói a alma.",
+            "Pensamentos Imorais": "Fantasias e imaginações pecaminosas que poluem a mente e preparam terreno para ações erradas.",
+            "Rebeldia": "Resistência e desobediência à autoridade de Deus e às autoridades estabelecidas por Ele.",
+            "irreverência": "Falta de respeito e reverência a Deus, coisas sagradas e autoridades espirituais.",
+            "Racionalismo": "Confiança excessiva na razão humana ao invés da revelação divina, elevando o intelecto acima de Deus.",
+            "Primeira Comunhão": "Para algumas denominações protestantes, participar deste sacramento católico é considerado prática não-bíblica.",
+            "Vaidade": "Orgulho excessivo da aparência e admiração de si mesmo, colocando-se como centro ao invés de Deus.",
+            "Crisma": "Para denominações protestantes, este sacramento católico é visto como tradição humana sem base bíblica.",
+            "Lesbianismo": "Relacionamento homossexual entre mulheres, considerado por igrejas tradicionais como contrário ao plano divino.",
+            "Egoísmo": "Colocar os próprios interesses acima dos outros e de Deus, contrário ao amor sacrificial ensinado por Cristo.",
+            "Mesquinho": "Falta de generosidade e espírito avarento que não compartilha com quem tem necessidade.",
+            "Ganância": "Desejo insaciável por riquezas e poder, nunca satisfeito com o que Deus provê.",
+            "Opressor": "Pessoa que usa poder para subjugar e maltratar os mais fracos, contrário à justiça divina.",
+            "Homossexualismo": "Relacionamento homossexual, considerado por igrejas tradicionais como desvio do plano original de Deus.",
+            "Ressentido": "Guardar amargura e mágoa, permitindo que a falta de perdão envene o coração.",
+            "Adivinhação": "Tentar prever o futuro através de práticas ocultas ao invés de confiar na soberania de Deus.",
+            "Sonegador": "Não pagar impostos devidos, desonestidade fiscal que rouba do bem comum da sociedade.",
+            "Sexo com Animais": "Bestialidade, perversão sexual expressamente condenada como abominação nas escrituras.",
+            "Iracundo": "Pessoa dominada pela ira e raiva descontrolada, falta do fruto do Espírito que é domínio próprio.",
+            "Caluniador": "Espalhar acusações falsas para prejudicar a reputação alheia, forma grave de mentira.",
+            "Intelectualismo": "Orgulho intelectual que menospreza a fé simples, elevando a sabedoria humana acima da divina.",
+            "Cobiçoso": "Desejar intensamente o que pertence ao outro, violação do décimo mandamento.",
+            "Imprudente": "Agir sem sabedoria e discernimento, tomando decisões precipitadas sem buscar a direção de Deus.",
+            "Desonesto": "Falta de integridade em palavras e ações, enganar e manipular para obter vantagens.",
+            "Maledicente": "Falar mal e espalhar comentários negativos sobre os outros, usando a língua para destruir.",
+            "Vício do Álcool": "Dependência de bebidas alcoólicas que escraviza e leva à embriaguez condenada nas escrituras.",
+            "Espírito de Miséria": "Mentalidade de escassez e pobreza que não reconhece Deus como provedor abundante.",
+            "Glutonaria": "Gula, excesso no comer e beber, falta de autocontrole e moderação, um dos sete pecados capitais.",
+            "Ocultismo": "Envolvimento com práticas espirituais obscuras, magia negra e comunicação com espíritos malignos."
+        };
 
-        // ------------------------------------------------------------------
-        // SISTEMA DE CARREGAMENTO DE DADOS (ROBUSTO COM FALLBACK)
-        // ------------------------------------------------------------------
+        const pecados = Object.keys(pecadosData);
 
-        async function loadHistoricalData() {
-            const fileName = 'Todos os resultados da Mega Sena  Rede Loteria.txt';
+        const gridElement = document.getElementById('pecadosGrid');
+        
+        pecados.forEach((pecado, index) => {
+            const div = document.createElement('div');
+            div.className = 'pecado-item';
             
-            try {
-                let response;
-                try {
-                    // Tenta carregar automaticamente usando encodeURI para caracteres especiais
-                    response = await fetch(encodeURI(fileName));
-                } catch (networkError) {
-                    throw new Error("Falha na requisição (bloqueio de navegador ou arquivo inexistente).");
-                }
-
-                if (!response.ok) {
-                    throw new Error(`Erro HTTP: ${response.status}`);
-                }
-
-                const text = await response.text();
-                processData(text);
-                
-            } catch (error) {
-                console.warn("Carregamento automático falhou. Ativando modo manual.", error);
-                showManualUploadUI();
-            }
-        }
-
-        function showManualUploadUI() {
-            const html = `
-                <div class="info-box" style="border-left-color: var(--warning-color); background-color: var(--bg-secondary);">
-                    <h3>⚠️ Arquivo de Dados Necessário</h3>
-                    <p>Devido às restrições de segurança do navegador, o simulador não conseguiu ler o arquivo local automaticamente.</p>
-                    <p style="margin: 15px 0; font-weight: bold;">Por favor, selecione o arquivo manualmente abaixo:</p>
-                    
-                    <div style="margin: 20px 0;">
-                        <input type="file" id="fileInput" accept=".txt,.csv" onchange="handleFileUpload(this)">
-                    </div>
-                    
-                    <p class="help-text">Selecione o arquivo "Todos os resultados da Mega Sena..." que você baixou.</p>
-                </div>
-            `;
-            document.getElementById('statsContent').innerHTML = html;
-        }
-
-        function handleFileUpload(input) {
-            const file = input.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                processData(e.target.result);
-                // Feedback visual
-                alert('Dados carregados com sucesso! Agora você pode gerar jogos.');
-            };
-            reader.readAsText(file);
-        }
-
-        function processData(text) {
-            const lines = text.split('\n');
-            historicalData = [];
-            numberFrequency = {};
-            
-            // Inicializa contadores
-            for (let i = 1; i <= 60; i++) {
-                numberFrequency[i] = 0;
-            }
-            
-            lines.forEach((line, index) => {
-                if (index === 0 || !line.trim()) return; // Pula cabeçalho ou linhas vazias
-                
-                // Parser flexível para lidar com diferentes separadores (vírgula, tab, ponto e vírgula)
-                const parts = line.split(/[\t,;]+/); 
-                
-                // Tenta extrair números válidos
-                const validNumbers = parts
-                    .map(p => parseInt(p.trim()))
-                    .filter(n => !isNaN(n) && n >= 1 && n <= 60);
-
-                // Heurística: Se encontrar >= 6 números na linha, tenta identificar as dezenas
-                if (validNumbers.length >= 6) {
-                    // Fallback para a estrutura original do arquivo se possível (colunas fixas)
-                    const partsOriginal = line.split(',');
-                    let numbers = [];
-
-                    if (partsOriginal.length >= 8) {
-                        // Tenta pegar colunas fixas (ajustar índices conforme CSV real, aqui assume 2 a 7)
-                        const cols = [2,3,4,5,6,7].map(idx => parseInt(partsOriginal[idx]));
-                        if (cols.every(n => !isNaN(n))) {
-                            numbers = cols.sort((a,b)=>a-b);
-                        } else {
-                            // Se falhar, pega os primeiros 6 números válidos encontrados
-                            numbers = validNumbers.slice(0, 6).sort((a,b)=>a-b);
-                        }
-                    } else {
-                        numbers = validNumbers.slice(0, 6).sort((a,b)=>a-b);
-                    }
-                    
-                    // Valida se são únicos e dentro do range
-                    if (numbers.length === 6 && new Set(numbers).size === 6) {
-                        historicalData.push(numbers);
-                        numbers.forEach(n => numberFrequency[n]++);
-                    }
-                }
-            });
-
-            // RECALIBRAGEM DINÂMICA (A Mágica do Score)
-            if (historicalData.length > 0) {
-                const frequencies = Object.values(numberFrequency);
-                minFreq = Math.min(...frequencies);
-                maxFreq = Math.max(...frequencies);
-                updateStats();
-                
-                // Mensagem de sucesso na aba Generator se estiver vazia
-                const genRes = document.getElementById('generatedResult');
-                if (!genRes.innerHTML) {
-                    genRes.innerHTML = `<div class="info-box" style="border-left-color: var(--success-color)">Base de dados pronta: ${historicalData.length} concursos carregados.</div>`;
-                }
-            } else {
-                alert('Erro: O arquivo parece não conter dados válidos da Mega Sena.');
-            }
-        }
-
-        // ------------------------------------------------------------------
-        // LÓGICA DE UNICIDADE DINÂMICA
-        // ------------------------------------------------------------------
-
-        function calculateUniqueness(numbers) {
-            // 1. Verificação Binária Absoluta (Se já saiu, é zero)
-            const sorted = [...numbers].sort((a, b) => a - b);
-            const exists = historicalData.some(combo => 
-                combo.every((n, i) => n === sorted[i])
-            );
-            if (exists) return 0;
-
-            // 2. Cálculo Relativo Dinâmico
-            // Quanto mais próxima a frequência média estiver do PISO (minFreq), maior o score.
-            const avgFreq = numbers.reduce((sum, n) => sum + (numberFrequency[n] || 0), 0) / 6;
-            
-            // Evita divisão por zero se banco for pequeno
-            const range = maxFreq - minFreq || 1; 
-            
-            // Fórmula: Inverte a escala.
-            // Se avgFreq == minFreq (o mais raro possível), score = 100.
-            // Se avgFreq == maxFreq (o mais comum possível), score = 0.
-            let score = 100 * (1 - (avgFreq - minFreq) / range);
-            
-            return Math.max(0, Math.min(100, score));
-        }
-
-        // ------------------------------------------------------------------
-        // ESTRATÉGIAS DE GERAÇÃO (TODAS AS ORIGINAIS RESTAURADAS)
-        // ------------------------------------------------------------------
-
-        function generateNumbers() {
-            if (historicalData.length === 0) {
-                alert('Por favor, carregue os dados na aba "Estatísticas" primeiro.');
-                switchTab('stats');
-                return;
-            }
-
-            const strategy = document.getElementById('strategy').value;
-            const avoidConsecutive = document.getElementById('avoidConsecutive').checked;
-            const balanceOddEven = document.getElementById('balanceOddEven').checked;
-            
-            let numbers = [];
-            let attempts = 0;
-            const maxAttempts = 10000;
-            
-            while (attempts < maxAttempts) {
-                numbers = generateByStrategy(strategy);
-                
-                if (avoidConsecutive && hasConsecutive(numbers)) {
-                    attempts++;
-                    continue;
-                }
-                
-                if (balanceOddEven && !isBalanced(numbers)) {
-                    attempts++;
-                    continue;
-                }
-                
-                // Filtro de Qualidade de Unicidade
-                // Aceita qualquer score se a estratégia for propositalmente "most_drawn"
-                // Para outras, tenta buscar algo com unicidade razoável (>20%)
-                const score = calculateUniqueness(numbers);
-                if (strategy !== 'most_drawn' && score < 20) {
-                     attempts++;
-                     continue;
-                }
-                
-                // Garante que não repete histórico (mesmo que estratégia não seja avoid_history)
-                if (!combinationExists(numbers)) {
-                    break;
-                }
-                attempts++;
-            }
-            
-            if (attempts >= maxAttempts) {
-                alert('Não foi possível gerar uma combinação com os filtros atuais. Tente relaxar as restrições.');
-                return;
-            }
-            
-            displayGenerated(numbers, strategy);
-        }
-
-        function generateByStrategy(strategy) {
-            let numbers = [];
-            switch(strategy) {
-                case 'avoid_history':
-                    numbers = generateRandom();
-                    break;
-                case 'least_drawn':
-                    numbers = generateLeastDrawn();
-                    break;
-                case 'most_drawn':
-                    numbers = generateMostDrawn();
-                    break;
-                case 'balanced':
-                    numbers = generateBalanced();
-                    break;
-                case 'fibonacci':
-                    numbers = generateFibonacci();
-                    break;
-                case 'prime':
-                    numbers = generatePrime();
-                    break;
-                case 'hot_cold':
-                    numbers = generateHotCold();
-                    break;
-                case 'random_weighted':
-                    numbers = generateWeighted();
-                    break;
-                default:
-                    numbers = generateRandom();
-            }
-            return numbers.sort((a, b) => a - b);
-        }
-
-        // Funções auxiliares de geração
-        function generateRandom() {
-            const numbers = new Set();
-            while (numbers.size < 6) numbers.add(Math.floor(Math.random() * 60) + 1);
-            return Array.from(numbers);
-        }
-
-        function generateLeastDrawn() {
-            // Prioriza números próximos ao minFreq
-            const sorted = Object.entries(numberFrequency)
-                .sort((a, b) => a[1] - b[1])
-                .map(e => parseInt(e[0]));
-            
-            const numbers = new Set();
-            const pool = sorted.slice(0, 25); // Pega os 25 menos sorteados
-            
-            while(numbers.size < 5) numbers.add(pool[Math.floor(Math.random() * pool.length)]);
-            while(numbers.size < 6) numbers.add(Math.floor(Math.random() * 60) + 1); // 1 aleatório puro
-            return Array.from(numbers);
-        }
-
-        function generateMostDrawn() {
-            // Prioriza números próximos ao maxFreq
-            const sorted = Object.entries(numberFrequency)
-                .sort((a, b) => b[1] - a[1])
-                .map(e => parseInt(e[0]));
-            
-            const numbers = new Set();
-            const pool = sorted.slice(0, 25);
-            while(numbers.size < 5) numbers.add(pool[Math.floor(Math.random() * pool.length)]);
-            while(numbers.size < 6) numbers.add(Math.floor(Math.random() * 60) + 1);
-            return Array.from(numbers);
-        }
-
-        function generateBalanced() {
-            // Pega do meio da tabela
-            const sorted = Object.entries(numberFrequency)
-                .sort((a, b) => a[1] - b[1])
-                .map(e => parseInt(e[0]));
-            
-            const numbers = new Set();
-            const mid = Math.floor(sorted.length / 2);
-            // Pool de 30 números do meio
-            const pool = sorted.slice(mid - 15, mid + 15);
-            
-            while(numbers.size < 6) numbers.add(pool[Math.floor(Math.random() * pool.length)]);
-            return Array.from(numbers);
-        }
-
-        function generateFibonacci() {
-            const fib = [1, 2, 3, 5, 8, 13, 21, 34, 55];
-            const numbers = new Set();
-            
-            // Tenta colocar 4 numeros de fibonacci
-            while(numbers.size < 4) {
-                 numbers.add(fib[Math.floor(Math.random() * fib.length)]);
-            }
-            // Completa com aleatórios
-            while (numbers.size < 6) numbers.add(Math.floor(Math.random() * 60) + 1);
-            return Array.from(numbers);
-        }
-
-        function generatePrime() {
-            const primes = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59];
-            const numbers = new Set();
-            while (numbers.size < 4) numbers.add(primes[Math.floor(Math.random() * primes.length)]);
-            while (numbers.size < 6) numbers.add(Math.floor(Math.random() * 60) + 1);
-            return Array.from(numbers);
-        }
-
-        function generateHotCold() {
-            const sorted = Object.entries(numberFrequency).sort((a, b) => b[1] - a[1]).map(e => parseInt(e[0]));
-            const numbers = new Set();
-            
-            // 3 Quentes (Top 15)
-            while(numbers.size < 3) numbers.add(sorted[Math.floor(Math.random() * 15)]);
-            // 3 Frios (Bottom 15)
-            while(numbers.size < 6) numbers.add(sorted[sorted.length - 1 - Math.floor(Math.random() * 15)]);
-            
-            return Array.from(numbers);
-        }
-
-        function generateWeighted() {
-            const numbers = new Set();
-            // Lógica de roleta viciada baseada na frequência
-            const total = Object.values(numberFrequency).reduce((a, b) => a + b, 0);
-            
-            while (numbers.size < 6) {
-                let rand = Math.random() * total;
-                let sum = 0;
-                for (let [num, freq] of Object.entries(numberFrequency)) {
-                    sum += freq;
-                    if (rand <= sum) {
-                        numbers.add(parseInt(num));
-                        break;
-                    }
-                }
-            }
-            return Array.from(numbers);
-        }
-
-        function combinationExists(numbers) {
-            const sorted = [...numbers].sort((a, b) => a - b);
-            return historicalData.some(combo => 
-                combo.every((n, i) => n === sorted[i])
-            );
-        }
-
-        function hasConsecutive(numbers) {
-            const sorted = [...numbers].sort((a, b) => a - b);
-            for (let i = 0; i < sorted.length - 1; i++) {
-                if (sorted[i + 1] - sorted[i] === 1) return true;
-            }
-            return false;
-        }
-
-        function isBalanced(numbers) {
-            const odd = numbers.filter(n => n % 2 === 1).length;
-            return odd >= 2 && odd <= 4;
-        }
-
-        // ------------------------------------------------------------------
-        // EXIBIÇÃO E ANÁLISE
-        // ------------------------------------------------------------------
-
-        function displayGenerated(numbers, strategy) {
-            const score = calculateUniqueness(numbers);
-            const freqs = numbers.map(n => numberFrequency[n] || 0);
-            
-            const strategyNames = {
-                'avoid_history': '🚫 Evitar Histórico',
-                'least_drawn': '📉 Dezenas Menos Sorteadas',
-                'most_drawn': '📈 Dezenas Mais Sorteadas',
-                'balanced': '⚖️ Balanceada',
-                'fibonacci': '🔢 Fibonacci',
-                'prime': '🔴 Números Primos',
-                'hot_cold': '🔥❄️ Quentes e Frios',
-                'random_weighted': '🎲 Aleatório Ponderado'
-            };
-            
-            const html = `
-                <div class="info-box" style="margin-top: 30px;">
-                    <h3>✅ Combinação Gerada</h3>
-                    <p><strong>Estratégia:</strong> ${strategyNames[strategy]}</p>
-                    <p><strong>Unicidade Dinâmica:</strong> ${score.toFixed(1)}%</p>
-                    <small>Intervalo Base: ${minFreq} - ${maxFreq} saídas</small>
-                </div>
-                
-                <div class="numbers-display">
-                    ${numbers.map((n, i) => `
-                        <div class="number-ball" style="animation-delay: ${i * 0.1}s">
-                            ${String(n).padStart(2, '0')}
-                        </div>
-                    `).join('')}
-                </div>
-                
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-value">${numbers.filter(n => n % 2 === 1).length}</div>
-                        <div class="stat-label">Ímpares</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value">${numbers.filter(n => n % 2 === 0).length}</div>
-                        <div class="stat-label">Pares</div>
-                    </div>
-                </div>
+            div.innerHTML = `
+                <input type="checkbox" id="pecado${index}" value="${pecado}">
+                <label for="pecado${index}">${pecado}</label>
             `;
             
-            document.getElementById('generatedResult').innerHTML = html;
-        }
-
-        function analyzeGames() {
-            if(historicalData.length === 0) {
-                alert('Carregue os dados primeiro.');
-                switchTab('stats');
-                return;
-            }
-
-            const input = document.getElementById('gamesInput').value.trim();
-            if (!input) {
-                alert('Por favor, insira pelo menos um jogo.');
-                return;
-            }
-            
-            const lines = input.split('\n').filter(l => l.trim());
-            lastAnalysisResults = []; // Limpa resultados anteriores
-            
-            lines.forEach(line => {
-                // Parser inteligente para lidar com formatos variados
-                const parsed = parseLine(line);
-                if (!parsed) return;
-
-                const { name, numbers } = parsed;
-                
-                const isDuplicate = combinationExists(numbers);
-                const freqs = numbers.map(n => numberFrequency[n] || 0);
-                const totalFreq = freqs.reduce((a, b) => a + b, 0);
-                const avgFreq = totalFreq / 6;
-                const uniquenessScore = calculateUniqueness(numbers);
-                const variance = freqs.reduce((sum, f) => sum + Math.pow(f - avgFreq, 2), 0) / 6;
-                
-                lastAnalysisResults.push({
-                    name,
-                    numbers,
-                    isDuplicate,
-                    freqs,
-                    totalFreq,
-                    avgFreq,
-                    variance,
-                    uniquenessScore
-                });
-            });
-            
-            renderAnalysis();
-        }
-
-        // Novo Parser de Linha Robusto
-        function parseLine(line) {
-            // Tokeniza por caracteres não alfanuméricos comuns (mantendo acentos)
-            const tokens = line.trim().split(/[\s,\.\-\t:;]+/);
-            
-            // Procura por uma sequência de 6 números distintos entre 1-60
-            let startIndex = -1;
-            
-            for (let i = 0; i <= tokens.length - 6; i++) {
-                let candidates = [];
-                let isSequence = true;
-                
-                for (let j = 0; j < 6; j++) {
-                    const val = parseInt(tokens[i+j]);
-                    if (isNaN(val) || val < 1 || val > 60) {
-                        isSequence = false;
-                        break;
-                    }
-                    candidates.push(val);
+            const checkbox = div.querySelector('input');
+            checkbox.addEventListener('change', function() {
+                if (this.checked) {
+                    div.classList.add('checked');
+                    mostrarPopup(pecado, pecadosData[pecado]);
+                } else {
+                    div.classList.remove('checked');
                 }
-                
-                // Verifica se são 6 números DISTINTOS (ex: evita "1, 1, 1...")
-                if (isSequence && new Set(candidates).size === 6) {
-                    startIndex = i;
-                    break; 
-                }
-            }
-
-            if (startIndex === -1) return null;
-
-            // O nome é tudo antes da sequência numérica
-            let nameTokens = tokens.slice(0, startIndex);
-            let name = nameTokens.join(" ");
-            if (!name) name = "Jogo " + (lastAnalysisResults.length + 1);
-            
-            const numbers = tokens.slice(startIndex, startIndex + 6)
-                                .map(n => parseInt(n))
-                                .sort((a,b)=>a-b);
-            
-            return { name, numbers };
-        }
-
-        function renderAnalysis() {
-            const results = lastAnalysisResults;
-            const compactMode = document.getElementById('compactMode').checked;
-            const container = document.getElementById('analysisResult');
-            
-            if (results.length === 0) {
-                container.innerHTML = '<p style="text-align:center; color:var(--text-secondary)">Nenhum jogo válido identificado.</p>';
-                return;
-            }
-
-            if (compactMode) {
-                renderCompactView(results, container);
-            } else {
-                renderDetailedView(results, container);
-            }
-        }
-
-        function renderCompactView(results, container) {
-            // Agrupar por nome
-            const groups = {};
-            results.forEach(r => {
-                if (!groups[r.name]) groups[r.name] = [];
-                groups[r.name].push(r);
-            });
-
-            let html = '<h3>📊 Visão Compacta (Agrupada)</h3>';
-
-            for (const [name, games] of Object.entries(groups)) {
-                const avgScore = games.reduce((acc, g) => acc + g.uniquenessScore, 0) / games.length;
-                const uniqueId = 'group-' + name.replace(/\s+/g, '-').toLowerCase() + '-' + Math.random().toString(36).substr(2, 5);
-                
-                // Cores baseadas na média do score
-                const scoreColor = avgScore > 75 ? 'var(--success-color)' : avgScore < 30 ? 'var(--danger-color)' : 'var(--warning-color)';
-                const borderColor = avgScore > 75 ? 'var(--success-color)' : avgScore < 30 ? 'var(--danger-color)' : 'var(--accent-color)';
-
-                html += `
-                    <div class="compact-group">
-                        <div class="group-header" onclick="toggleGroup('${uniqueId}')" style="border-left-color: ${borderColor}">
-                            <div>
-                                <strong>${name}</strong>
-                                <span style="font-size:0.9rem; color:var(--text-secondary); margin-left:10px">(${games.length} jogos)</span>
-                            </div>
-                            <div style="font-weight:bold; color:${scoreColor}">
-                                Média: ${avgScore.toFixed(1)}%
-                            </div>
-                        </div>
-                        <div id="${uniqueId}" class="group-details">
-                            ${games.map(g => {
-                                const gameColor = g.uniquenessScore > 75 ? 'success' : g.uniquenessScore < 30 ? 'danger' : 'warning';
-                                return `
-                                <div class="compact-row">
-                                    <div class="compact-nums">
-                                        ${g.numbers.map(n => `<div class="compact-ball">${String(n).padStart(2,'0')}</div>`).join('')}
-                                    </div>
-                                    <div style="text-align:right">
-                                        <span class="badge badge-${gameColor}">${g.uniquenessScore.toFixed(0)}%</span>
-                                        ${g.isDuplicate ? '<span class="badge badge-danger">!</span>' : ''}
-                                    </div>
-                                </div>
-                                `;
-                            }).join('')}
-                        </div>
-                    </div>
-                `;
-            }
-            container.innerHTML = html;
-        }
-
-        function toggleGroup(id) {
-            const el = document.getElementById(id);
-            if (el) el.classList.toggle('open');
-        }
-
-        function renderDetailedView(results, container) {
-            results.sort((a, b) => b.uniquenessScore - a.uniquenessScore);
-            const medals = ['🥇', '🥈', '🥉'];
-            
-            let html = '<h3>📊 Resultados Detalhados</h3><div class="ranking">';
-            
-            results.forEach((result, index) => {
-                const medal = index < 3 ? medals[index] : `${index + 1}º`;
-                const statusClass = result.isDuplicate ? 'duplicate' : 'unique';
-                const statusText = result.isDuplicate ? '❌ JÁ SORTEADO' : '✅ ÚNICO';
-                
-                const scoreColor = result.uniquenessScore > 75 ? 'var(--success-color)' : 
-                                 result.uniquenessScore < 30 ? 'var(--danger-color)' : 'var(--warning-color)';
-
-                html += `
-                    <div class="result-item ${statusClass}">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                            <h4><span class="rank-medal">${medal}</span>${result.name}</h4>
-                            <span style="font-weight: bold; color: ${result.isDuplicate ? 'var(--danger-color)' : 'var(--success-color)'};">
-                                ${statusText}
-                            </span>
-                        </div>
-                        
-                        <div class="numbers-display" style="justify-content: flex-start; margin: 15px 0;">
-                            ${result.numbers.map(n => `
-                                <div class="number-ball" style="width: 50px; height: 50px; font-size: 1.2rem;">
-                                    ${String(n).padStart(2, '0')}
-                                </div>
-                            `).join('')}
-                        </div>
-                        
-                        <div class="stats-grid">
-                            <div class="stat-card">
-                                <div class="stat-value" style="color:${scoreColor}">${result.uniquenessScore.toFixed(1)}%</div>
-                                <div class="stat-label">Unicidade</div>
-                            </div>
-                            <div class="stat-card">
-                                <div class="stat-value">${result.avgFreq.toFixed(0)}</div>
-                                <div class="stat-label">Média Saídas</div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            });
-            html += '</div>';
-            container.innerHTML = html;
-        }
-
-        function displayAnalysis(results) {
-            // Deprecated - kept for compatibility but logic moved to renderAnalysis
-            lastAnalysisResults = results;
-            renderAnalysis();
-        }
-
-        // ------------------------------------------------------------------
-        // ESTATÍSTICAS E UI
-        // ------------------------------------------------------------------
-
-        function updateStats() {
-            const sorted = Object.entries(numberFrequency).sort((a, b) => b[1] - a[1]);
-            const top10 = sorted.slice(0, 10);
-            const bottom10 = sorted.slice(-10).reverse();
-            
-            const html = `
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-value">${historicalData.length}</div>
-                        <div class="stat-label">Sorteios</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value">${maxFreq}</div>
-                        <div class="stat-label">Teto (Max)</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value">${minFreq}</div>
-                        <div class="stat-label">Piso (Min)</div>
-                    </div>
-                </div>
-                
-                <div class="card">
-                    <h3>🔥 Top 10 - Mais Sorteados (Teto)</h3>
-                    ${top10.map((entry, i) => `
-                        <div class="rank-item">
-                            <div>
-                                <span class="rank-medal">${i < 3 ? ['🥇','🥈','🥉'][i] : `${i+1}º`}</span>
-                                <strong>Número ${String(entry[0]).padStart(2, '0')}</strong>
-                            </div>
-                            <div>
-                                <strong>${entry[1]}</strong>
-                                <div class="progress-bar" style="width: 150px; display:inline-block; margin-left:10px; vertical-align:middle">
-                                    <div class="progress-fill" style="width: ${(entry[1] / maxFreq) * 100}%"></div>
-                                </div>
-                            </div>
-                        </div>
-                    `).join('')}
-                </div>
-                
-                <div class="card">
-                    <h3>❄️ Top 10 - Menos Sorteados (Piso)</h3>
-                    ${bottom10.map((entry, i) => `
-                        <div class="rank-item">
-                            <div>
-                                <span class="rank-medal">${i+1}º</span>
-                                <strong>Número ${String(entry[0]).padStart(2, '0')}</strong>
-                            </div>
-                            <div>
-                                <strong>${entry[1]}</strong>
-                                <div class="progress-bar" style="width: 150px; display:inline-block; margin-left:10px; vertical-align:middle">
-                                    <div class="progress-fill" style="width: ${(entry[1] / maxFreq) * 100}%"></div>
-                                </div>
-                            </div>
-                        </div>
-                    `).join('')}
-                </div>
-            `;
-            
-            document.getElementById('statsContent').innerHTML = html;
-        }
-
-        function toggleTheme() {
-            const html = document.documentElement;
-            const currentTheme = html.getAttribute('data-theme');
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            html.setAttribute('data-theme', newTheme);
-            localStorage.setItem('theme', newTheme);
-        }
-
-        function switchTab(tabName) {
-            document.querySelectorAll('.tab-content').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.classList.remove('active');
+                atualizarContador();
             });
             
-            document.getElementById(tabName).classList.add('active');
-            event.target.classList.add('active');
-        }
-
-        document.getElementById('strategy').addEventListener('change', function(e) {
-            const descriptions = {
-                'avoid_history': 'Gera números aleatórios, validando apenas se já saíram juntos.',
-                'least_drawn': 'Prioriza os números mais próximos do piso (menos sorteados).',
-                'most_drawn': 'Prioriza os números mais próximos do teto (mais sorteados).',
-                'balanced': 'Pega números com frequência mediana para equilibrar.',
-                'fibonacci': 'Tenta usar números da sequência Fibonacci (1,2,3,5,8...).',
-                'prime': 'Prioriza o uso de números primos.',
-                'hot_cold': 'Mistura 50% de números quentes (teto) e 50% frios (piso).',
-                'random_weighted': 'Roleta viciada: números que saíram mais têm mais chance.'
-            };
-            document.getElementById('strategyHelp').textContent = descriptions[e.target.value] || '';
+            const label = div.querySelector('label');
+            label.addEventListener('click', function(e) {
+                e.preventDefault();
+                checkbox.checked = !checkbox.checked;
+                checkbox.dispatchEvent(new Event('change'));
+            });
+            
+            gridElement.appendChild(div);
         });
 
-        // Inicializar
-        document.addEventListener('DOMContentLoaded', function() {
-            const savedTheme = localStorage.getItem('theme') || 'light';
-            document.documentElement.setAttribute('data-theme', savedTheme);
+        function mostrarPopup(titulo, texto) {
+            const popup = document.getElementById('popupOverlay');
+            document.getElementById('popupTitulo').textContent = titulo;
+            document.getElementById('popupTexto').textContent = texto;
             
-            loadHistoricalData();
-            document.getElementById('strategy').dispatchEvent(new Event('change'));
-        });
+            // Remove closing class if exists
+            popup.classList.remove('closing');
+            popup.classList.add('show');
+            
+            // Auto-fechar após 8 segundos
+            if (window.popupTimeout) {
+                clearTimeout(window.popupTimeout);
+            }
+            window.popupTimeout = setTimeout(() => {
+                fecharPopup();
+            }, 8000);
+        }
+
+        function fecharPopup() {
+            const popup = document.getElementById('popupOverlay');
+            popup.classList.add('closing');
+            
+            if (window.popupTimeout) {
+                clearTimeout(window.popupTimeout);
+            }
+            
+            setTimeout(() => {
+                popup.classList.remove('show', 'closing');
+            }, 300);
+        }
+
+        function atualizarContador() {
+            const checkboxes = document.querySelectorAll('input[type="checkbox"]:checked');
+            const total = checkboxes.length;
+            const counterText = document.getElementById('counterText');
+            
+            if (total === 0) {
+                counterText.textContent = 'Nenhum pecado selecionado';
+            } else if (total === 1) {
+                counterText.textContent = '1 pecado selecionado';
+            } else {
+                counterText.textContent = `${total} pecados selecionados`;
+            }
+        }
+
+        function consultarDeus() {
+            const checkboxes = document.querySelectorAll('input[type="checkbox"]:checked');
+            const total = checkboxes.length;
+            const totalPecados = pecados.length;
+            const percentual = (total / totalPecados) * 100;
+
+            let titulo, subtitulo, mensagem, cor;
+
+            if (percentual === 0) {
+                titulo = "✨ Pureza em Pessoa ✨";
+                subtitulo = "Santo(a) Imaculado(a)";
+                mensagem = "Parabéns! Você vai direto para o céu!";
+                cor = "linear-gradient(135deg, #667eea 0%, #764ba2 100%)";
+            } else if (percentual <= 20) {
+                titulo = "😇 Quase um Anjo";
+                subtitulo = "Alma Iluminada";
+                mensagem = "Alguns deslizes, mas o céu te aguarda!";
+                cor = "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)";
+            } else if (percentual <= 40) {
+                titulo = "😅 Pecador Moderado";
+                subtitulo = "Entre o Bem e o Mal";
+                mensagem = "Você está no caminho, mas precisa de mais oração!";
+                cor = "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)";
+            } else if (percentual <= 60) {
+                titulo = "😰 Território Perigoso";
+                subtitulo = "Mergulho no Pecado";
+                mensagem = "Cuidado! A situação está ficando quente...";
+                cor = "linear-gradient(135deg, #fa709a 0%, #fee140 100%)";
+            } else {
+                titulo = "🔥 Alma Perdida 🔥";
+                subtitulo = "Campeão(ã) dos Pecados";
+                mensagem = "Que pena, o inferno te espera... Hora de repensar a vida!";
+                cor = "linear-gradient(135deg, #ff0844 0%, #ffb199 100%)";
+            }
+
+            document.getElementById('resultadoTitulo').textContent = titulo;
+            document.getElementById('resultadoSubtitulo').textContent = subtitulo;
+            document.getElementById('resultadoPontuacao').textContent = `${total} / ${totalPecados}`;
+            document.getElementById('resultadoMensagem').textContent = mensagem;
+            document.getElementById('resultado').style.background = cor;
+            document.getElementById('resultado').classList.add('show');
+
+            criarConfetes();
+        }
+
+        function voltar() {
+            document.getElementById('resultado').classList.remove('show');
+            document.querySelectorAll('.confete').forEach(c => c.remove());
+        }
+
+        function criarConfetes() {
+            const cores = ['#ff0844', '#ffb199', '#43e97b', '#4facfe', '#667eea', '#764ba2', '#fee140', '#f093fb', '#4facfe'];
+            const formas = ['circle', 'square'];
+            
+            for (let i = 0; i < 80; i++) {
+                setTimeout(() => {
+                    const confete = document.createElement('div');
+                    confete.className = 'confete';
+                    confete.style.left = Math.random() * 100 + 'vw';
+                    confete.style.top = -20 + 'px';
+                    confete.style.background = cores[Math.floor(Math.random() * cores.length)];
+                    confete.style.animation = `cair ${(Math.random() * 2 + 2)}s linear forwards`;
+                    confete.style.animationDelay = Math.random() + 's';
+                    
+                    if (Math.random() > 0.5) {
+                        confete.style.borderRadius = '0';
+                        confete.style.transform = `rotate(${Math.random() * 360}deg)`;
+                    }
+                    
+                    document.body.appendChild(confete);
+
+                    setTimeout(() => confete.remove(), 5000);
+                }, i * 30);
+            }
+        }
     </script>
 </body>
 </html>
