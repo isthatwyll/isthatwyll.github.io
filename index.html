@@ -18,6 +18,48 @@
             min-height: 100vh;
             padding: 12px;
             overflow-x: hidden;
+            transition: background 0.3s ease;
+        }
+
+        body.dark-mode {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        }
+
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50px;
+            padding: 8px 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            display:none
+        }
+
+        .theme-toggle:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .theme-toggle:active {
+            transform: scale(0.95);
+        }
+
+        .theme-icon {
+            font-size: 20px;
+        }
+
+        .theme-label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: white;
         }
 
         .container {
@@ -28,6 +70,12 @@
             border-radius: 24px;
             padding: 24px 16px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            transition: background 0.3s ease, color 0.3s ease;
+        }
+
+        body.dark-mode .container {
+            background: rgba(30, 30, 45, 0.95);
+            color: #e0e0e0;
         }
 
         h1 {
@@ -50,6 +98,11 @@
             font-size: clamp(0.8rem, 3vw, 0.95rem);
             line-height: 1.5;
             padding: 0 16px;
+            transition: color 0.3s ease;
+        }
+
+        body.dark-mode .subtitle {
+            color: #aaa;
         }
 
         .counter {
@@ -61,6 +114,12 @@
             font-size: 1rem;
             font-weight: 600;
             color: #667eea;
+            transition: all 0.3s ease;
+        }
+
+        body.dark-mode .counter {
+            background: linear-gradient(135deg, #667eea25 0%, #764ba225 100%);
+            color: #8b9ff5;
         }
 
         .pecados-grid {
@@ -76,7 +135,7 @@
             padding: 14px 12px;
             border-radius: 12px;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            background: #f8f9fa;
+            background: #171423;
             border: 2px solid transparent;
             cursor: pointer;
             user-select: none;
@@ -104,7 +163,7 @@
         .pecado-item label {
             cursor: pointer;
             font-size: clamp(0.9rem, 3.5vw, 1rem);
-            color: #333;
+            color: #e9e9e9;
             font-weight: 500;
             flex: 1;
         }
@@ -188,7 +247,34 @@
             max-width: 300px;
         }
 
+        body.dark-mode .btn-consultar {
+            background: linear-gradient(135deg, #8b9ff5 0%, #9b7ec4 100%);
+            box-shadow: 0 8px 24px rgba(139, 159, 245, 0.4);
+        }
+
         .btn-consultar:active {
+            transform: scale(0.96);
+        }
+
+        .btn-voltar {
+            background: white;
+            color: #667eea;
+            border: none;
+            padding: 16px 40px;
+            font-size: clamp(1rem, 4vw, 1.2rem);
+            font-weight: 600;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body.dark-mode .btn-voltar {
+            background: #252538;
+            color: #8b9ff5;
+        }
+
+        .btn-voltar:active {
             transform: scale(0.96);
         }
 
@@ -218,6 +304,11 @@
             flex-direction: column;
             padding: 20px;
             overflow-y: auto;
+            transition: background 0.3s ease;
+        }
+
+        body.dark-mode .resultado {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
         }
 
         .resultado.show {
@@ -348,6 +439,13 @@
             border-left: 4px solid #667eea;
             max-height: 400px;
             overflow-y: auto;
+            transition: all 0.3s ease;
+        }
+
+        body.dark-mode .popup-content {
+            background: #252538;
+            border-left-color: #8b9ff5;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
         }
 
         @keyframes slideInRight {
@@ -416,6 +514,11 @@
             color: #667eea;
         }
 
+        body.dark-mode .popup-close:hover {
+            background: #3a3a50;
+            color: #8b9ff5;
+        }
+
         .popup-close:active {
             transform: scale(0.9);
         }
@@ -424,6 +527,11 @@
             font-size: clamp(0.9rem, 3.2vw, 0.95rem);
             line-height: 1.6;
             color: #555;
+            transition: color 0.3s ease;
+        }
+
+        body.dark-mode .popup-texto {
+            color: #ccc;
         }
 
         @media (max-width: 640px) {
@@ -461,10 +569,26 @@
             .popup-content {
                 max-height: 50vh;
             }
+
+            .theme-toggle {
+                top: 10px;
+                right: 10px;
+                padding: 6px 12px;
+                display:none;
+            }
+
+            .theme-label {
+                display: none;
+            }
         }
     </style>
 </head>
-<body>
+<body class="dark-mode">
+    <button class="theme-toggle" onclick="toggleTheme()" id="themeToggle">
+        <span class="theme-icon" id="themeIcon">☀️</span>
+        <span class="theme-label" id="themeLabel">Light Mode</span>
+    </button>
+
     <div class="container">
         <h1>Lista de Pecados</h1>
         <p class="subtitle">"O principal elemento para uma vida livre do pecado é o arrependimento"</p>
@@ -614,6 +738,38 @@
         const pecados = Object.keys(pecadosData);
 
         const gridElement = document.getElementById('pecadosGrid');
+
+        // Inicializa o tema
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'light') {
+                document.body.classList.remove('dark-mode');
+                updateThemeButton(false);
+            } else {
+                updateThemeButton(true);
+            }
+        }
+
+        function toggleTheme() {
+            const isDark = document.body.classList.toggle('dark-mode');
+            updateThemeButton(isDark);
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        }
+
+        function updateThemeButton(isDark) {
+            const icon = document.getElementById('themeIcon');
+            const label = document.getElementById('themeLabel');
+            
+            if (isDark) {
+                icon.textContent = '☀️';
+                label.textContent = 'Light Mode';
+            } else {
+                icon.textContent = '🌙';
+                label.textContent = 'Dark Mode';
+            }
+        }
+
+        initTheme();
         
         pecados.forEach((pecado, index) => {
             const div = document.createElement('div');
@@ -700,28 +856,28 @@
 
             if (percentual === 0) {
                 titulo = "✨ Pureza em Pessoa ✨";
-                subtitulo = "Santo(a) Imaculado(a)";
-                mensagem = "Parabéns! Você vai direto para o céu!";
+                subtitulo = "Santidade";
+                mensagem = "Volte e adicione 'mentira' na lista de pecados";
                 cor = "linear-gradient(135deg, #667eea 0%, #764ba2 100%)";
             } else if (percentual <= 20) {
                 titulo = "😇 Quase um Anjo";
                 subtitulo = "Alma Iluminada";
-                mensagem = "Alguns deslizes, mas o céu te aguarda!";
+                mensagem = "Alguns deslizes, cuidado com o Capeta!";
                 cor = "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)";
             } else if (percentual <= 40) {
                 titulo = "😅 Pecador Moderado";
-                subtitulo = "Entre o Bem e o Mal";
-                mensagem = "Você está no caminho, mas precisa de mais oração!";
+                subtitulo = "Começou a lacração";
+                mensagem = "Você está no caminho do céu, mas também do inferno!";
                 cor = "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)";
             } else if (percentual <= 60) {
                 titulo = "😰 Território Perigoso";
                 subtitulo = "Mergulho no Pecado";
-                mensagem = "Cuidado! A situação está ficando quente...";
+                mensagem = "Tá quentinho, tá quentinho...";
                 cor = "linear-gradient(135deg, #fa709a 0%, #fee140 100%)";
             } else {
                 titulo = "🔥 Alma Perdida 🔥";
-                subtitulo = "Campeão(ã) dos Pecados";
-                mensagem = "Que pena, o inferno te espera... Hora de repensar a vida!";
+                subtitulo = "Mergulho no Pecado";
+                mensagem = "VOCÊ VAI SIM!";
                 cor = "linear-gradient(135deg, #ff0844 0%, #ffb199 100%)";
             }
 
