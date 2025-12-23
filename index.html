@@ -1,4 +1,4 @@
-    <!DOCTYPE html>
+<!DOCTYPE html>
     <html lang="pt-BR">
     <head>
         <meta charset="UTF-8">
@@ -100,6 +100,7 @@
                 cursor: pointer;
                 accent-color: #667eea;
                 flex-shrink: 0;
+                pointer-events: none; /* Deixa o card gerenciar o clique */
             }
 
             .pecado-item label {
@@ -108,34 +109,7 @@
                 color: #d3d3d3;
                 font-weight: 500;
                 flex: 1;
-            }
-
-            .significado {
-                display: none;
-                margin-top: 8px;
-                padding: 12px;
-                background: rgba(102, 126, 234, 0.08);
-                border-left: 3px solid #667eea;
-                border-radius: 8px;
-                font-size: clamp(0.8rem, 3vw, 0.9rem);
-                color: #555;
-                line-height: 1.5;
-                animation: slideDown 0.3s ease-out;
-            }
-
-            .significado.show {
-                display: block;
-            }
-
-            @keyframes slideDown {
-                from {
-                    opacity: 0;
-                    transform: translateY(-10px);
-                }
-                to {
-                    opacity: 1;
-                    transform: translateY(0);
-                }
+                pointer-events: none; /* Deixa o card gerenciar o clique */
             }
 
             .significado {
@@ -582,7 +556,7 @@
                 "Vício do Cigarro": "Dependência do tabaco que destrói o corpo, templo do Espírito Santo, e escraviza a vontade.",
                 "Palavrões": "Uso de linguagem obscena e palavras de baixo calão que corrompem a comunicação saudável.",
                 "Assassinato": "Tirar a vida de outro ser humano, violação máxima do mandamento 'não matarás'.",
-                "Hipócrita": "Fingimento e falsidade religiosa, apresentar-se como santo externamente mas ser corrupto internamente.",
+                "Hipocríta": "Fingimento e falsidade religiosa, apresentar-se como santo externamente mas ser corrupto internamente.",
                 "Pronografia": "Consumo de material sexualmente explícito que corrompe a mente e alimenta a luxúria.",
                 "Festas idólatras": "Participação em celebrações que honram falsos deuses ou ídolos pagãos.",
                 "Sexo com familiares": "Incesto, relação sexual entre parentes próximos, abominação expressamente condenada na Bíblia.",
@@ -630,7 +604,6 @@
             };
 
             const pecados = Object.keys(pecadosData);
-
             const gridElement = document.getElementById('pecadosGrid');
             
             pecados.forEach((pecado, index) => {
@@ -643,49 +616,33 @@
                 `;
                 
                 const checkbox = div.querySelector('input');
-                checkbox.addEventListener('change', function() {
-                    if (this.checked) {
+                
+                // Lógica centralizada de alternância
+                const togglePecado = () => {
+                    checkbox.checked = !checkbox.checked;
+                    if (checkbox.checked) {
                         div.classList.add('checked');
                         mostrarPopup(pecado, pecadosData[pecado]);
                     } else {
                         div.classList.remove('checked');
                     }
                     atualizarContador();
-                });
-                
-                const label = div.querySelector('label');
-                label.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    checkbox.checked = !checkbox.checked;
-                    checkbox.dispatchEvent(new Event('change'));
-                });
+                };
+
+                // Clique no card inteiro
+                div.addEventListener('click', togglePecado);
                 
                 gridElement.appendChild(div);
             });
-            // Permite que o clique no label funcione naturalmente
-            // Mas adiciona funcionalidade extra para mostrar popup
-            label.addEventListener('click', function() {
-                // Aguarda o checkbox ser marcado naturalmente pelo label
-                setTimeout(() => {
-                    if (checkbox.checked) {
-                        mostrarPopup(pecado, pecadosData[pecado]);
-                    }
-                }, 0);
-            });
-            
-            gridElement.appendChild(div);
-
 
             function mostrarPopup(titulo, texto) {
                 const popup = document.getElementById('popupOverlay');
                 document.getElementById('popupTitulo').textContent = titulo;
                 document.getElementById('popupTexto').textContent = texto;
                 
-                // Remove closing class if exists
                 popup.classList.remove('closing');
                 popup.classList.add('show');
                 
-                // Auto-fechar após 8 segundos
                 if (window.popupTimeout) {
                     clearTimeout(window.popupTimeout);
                 }
@@ -707,6 +664,12 @@
                 }, 300);
             }
 
+            function sumirPopupImediatamente() {
+                const popup = document.getElementById('popupOverlay');
+                if (window.popupTimeout) clearTimeout(window.popupTimeout);
+                popup.classList.remove('show', 'closing');
+            }
+
             function atualizarContador() {
                 const checkboxes = document.querySelectorAll('input[type="checkbox"]:checked');
                 const total = checkboxes.length;
@@ -722,6 +685,8 @@
             }
 
             function consultarDeus() {
+                sumirPopupImediatamente();
+
                 const checkboxes = document.querySelectorAll('input[type="checkbox"]:checked');
                 const total = checkboxes.length;
                 const totalPecados = pecados.length;
@@ -773,7 +738,6 @@
 
             function criarConfetes() {
                 const cores = ['#ff0844', '#ffb199', '#43e97b', '#4facfe', '#667eea', '#764ba2', '#fee140', '#f093fb', '#4facfe'];
-                const formas = ['circle', 'square'];
                 
                 for (let i = 0; i < 80; i++) {
                     setTimeout(() => {
@@ -791,7 +755,6 @@
                         }
                         
                         document.body.appendChild(confete);
-
                         setTimeout(() => confete.remove(), 5000);
                     }, i * 30);
                 }
