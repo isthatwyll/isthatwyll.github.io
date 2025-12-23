@@ -1,542 +1,801 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Lista de Pecados - Confessionário</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-            touch-action: manipulation; /* Improves touch responsiveness */
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-            min-height: 100vh;
-            padding: 12px;
-            overflow-x: hidden;
-            color: #e0e0e0;
-        }
-
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-            background: rgba(30, 30, 45, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 24px;
-            padding: 24px 16px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-        }
-
-        h1 {
-            text-align: center;
-            background: linear-gradient(135deg, #8b9ff5 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 8px;
-            font-size: clamp(1.8rem, 6vw, 2.5rem);
-            font-weight: 800;
-            letter-spacing: -1px;
-        }
-
-        .subtitle {
-            text-align: center;
-            color: #aaa;
-            font-style: italic;
-            margin-bottom: 24px;
-            font-size: clamp(0.85rem, 3vw, 1rem);
-            line-height: 1.5;
-            padding: 0 16px;
-        }
-
-        .counter {
-            text-align: center;
-            margin-bottom: 20px;
-            padding: 15px;
-            background: rgba(139, 159, 245, 0.1);
-            border: 1px solid rgba(139, 159, 245, 0.2);
-            border-radius: 16px;
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: #8b9ff5;
-            transition: all 0.3s ease;
-        }
-
-        .pecados-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
-            gap: 10px;
-            margin-bottom: 100px; /* Space for sticky button */
-        }
-
-        /* Improved Item Interaction */
-        .pecado-item {
-            position: relative;
-            display: flex;
-            align-items: center;
-            padding: 16px;
-            border-radius: 16px;
-            background: rgba(255, 255, 255, 0.03);
-            border: 2px solid rgba(255, 255, 255, 0.05);
-            cursor: pointer;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            user-select: none;
-            -webkit-user-select: none;
-        }
-
-        .pecado-item:active {
-            transform: scale(0.97);
-            background: rgba(255, 255, 255, 0.08);
-        }
-
-        .pecado-item.checked {
-            background: rgba(139, 159, 245, 0.12);
-            border-color: #8b9ff5;
-            box-shadow: 0 4px 15px rgba(139, 159, 245, 0.1);
-        }
-
-        /* Custom Checkbox UI */
-        .checkbox-custom {
-            width: 24px;
-            height: 24px;
-            border: 2px solid #555;
-            border-radius: 6px;
-            margin-right: 14px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s;
-            flex-shrink: 0;
-            background: #1a1a2e;
-        }
-
-        .pecado-item.checked .checkbox-custom {
-            background: #8b9ff5;
-            border-color: #8b9ff5;
-        }
-
-        .checkbox-custom::after {
-            content: '✓';
-            color: white;
-            font-size: 16px;
-            font-weight: bold;
-            display: none;
-        }
-
-        .pecado-item.checked .checkbox-custom::after {
-            display: block;
-        }
-
-        .pecado-label {
-            font-size: clamp(0.95rem, 3.5vw, 1.05rem);
-            color: #d3d3d3;
-            font-weight: 500;
-            flex: 1;
-            pointer-events: none; /* Let parent handle click */
-        }
-
-        .pecado-item.checked .pecado-label {
-            color: #fff;
-        }
-
-        /* Footer / Button Area */
-        .btn-container {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            background: linear-gradient(to top, #1a1a2e 70%, transparent);
-            padding: 20px;
-            text-align: center;
-            z-index: 100;
-        }
-
-        .btn-consultar {
-            background: linear-gradient(135deg, #8b9ff5 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            padding: 18px 48px;
-            font-size: 1.2rem;
-            font-weight: 700;
-            border-radius: 50px;
-            cursor: pointer;
-            box-shadow: 0 10px 30px rgba(139, 159, 245, 0.4);
-            transition: all 0.3s;
-            width: 100%;
-            max-width: 350px;
-        }
-
-        .btn-consultar:active {
-            transform: scale(0.95);
-        }
-
-        /* Results Overlay */
-        .resultado {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: #1a1a2e;
-            z-index: 1000;
-            flex-direction: column;
-            padding: 30px;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            overflow-y: auto;
-        }
-
-        .resultado.show {
-            display: flex;
-            animation: fadeIn 0.4s ease;
-        }
-
-        .resultado-pontuacao {
-            font-size: clamp(4rem, 15vw, 7rem);
-            font-weight: 900;
-            margin: 20px 0;
-            line-height: 1;
-        }
-
-        /* Popup Notification */
-        .popup-overlay {
-            position: fixed;
-            bottom: 90px;
-            right: 20px;
-            left: 20px;
-            max-width: 400px;
-            margin: 0 auto;
-            background: #252538;
-            border-radius: 20px;
-            padding: 20px;
-            box-shadow: 0 15px 50px rgba(0,0,0,0.5);
-            border-left: 5px solid #8b9ff5;
-            z-index: 2000;
-            display: none;
-            transform: translateY(20px);
-            opacity: 0;
-            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-
-        .popup-overlay.show {
-            display: block;
-            transform: translateY(0);
-            opacity: 1;
-        }
-
-        .popup-close {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            color: #999;
-            cursor: pointer;
-            font-size: 20px;
-        }
-
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-        .confete {
-            position: fixed;
-            width: 10px;
-            height: 10px;
-            pointer-events: none;
-            z-index: 10001;
-        }
-
-        @keyframes cair {
-            to { transform: translateY(110vh) rotate(720deg); opacity: 0; }
-        }
-
-        @media (min-width: 768px) {
-            .popup-overlay {
-                left: auto;
-                right: 30px;
-                bottom: 30px;
+    <!DOCTYPE html>
+    <html lang="pt-BR">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Lista de Pecados - Confessionário</title>
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+                -webkit-tap-highlight-color: transparent;
             }
-            .btn-container {
-                position: relative;
-                background: transparent;
-                margin-top: 40px;
+
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+                background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+                min-height: 100vh;
+                padding: 12px;
+                overflow-x: hidden;
             }
-            .pecados-grid {
+
+            .container {
+                max-width: 900px;
+                margin: 0 auto;
+                background: rgba(30, 30, 45, 0.95);
+                backdrop-filter: blur(10px);
+                border-radius: 24px;
+                padding: 24px 16px;
+                box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+                color: #e0e0e0;
+            }
+
+            h1 {
+                text-align: center;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                background-clip: text;
+                margin-bottom: 8px;
+                font-size: clamp(1.5rem, 5vw, 2.2rem);
+                font-weight: 700;
+                letter-spacing: -0.5px;
+            }
+
+            .subtitle {
+                text-align: center;
+                color: #aaa;
+                font-style: italic;
+                margin-bottom: 24px;
+                font-size: clamp(0.8rem, 3vw, 0.95rem);
+                line-height: 1.5;
+                padding: 0 16px;
+            }
+
+            .counter {
+                text-align: center;
                 margin-bottom: 20px;
+                padding: 12px;
+                background: linear-gradient(135deg, #667eea25 0%, #764ba225 100%);
+                border-radius: 16px;
+                font-size: 1rem;
+                font-weight: 600;
+                color: #8b9ff5;
             }
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>Lista de Pecados</h1>
-        <p class="subtitle">"O principal elemento para uma vida livre do pecado é o arrependimento"</p>
-        
-        <div class="counter" id="counter">
-            Nenhum pecado selecionado
+
+            .pecados-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+                gap: 8px;
+                margin-bottom: 24px;
+            }
+
+            .pecado-item {
+                display: flex;
+                align-items: center;
+                padding: 14px 12px;
+                border-radius: 12px;
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                background: #171423;
+                border: 2px solid transparent;
+                cursor: pointer;
+                user-select: none;
+                -webkit-user-select: none;
+            }
+
+            .pecado-item:active {
+                transform: scale(0.98);
+            }
+
+            .pecado-item.checked {
+                background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+                border-color: #667eea;
+            }
+
+            .pecado-item input[type="checkbox"] {
+                margin-right: 12px;
+                width: 22px;
+                height: 22px;
+                cursor: pointer;
+                accent-color: #667eea;
+                flex-shrink: 0;
+            }
+
+            .pecado-item label {
+                cursor: pointer;
+                font-size: clamp(0.9rem, 3.5vw, 1rem);
+                color: #d3d3d3;
+                font-weight: 500;
+                flex: 1;
+            }
+
+            .significado {
+                display: none;
+                margin-top: 8px;
+                padding: 12px;
+                background: rgba(102, 126, 234, 0.08);
+                border-left: 3px solid #667eea;
+                border-radius: 8px;
+                font-size: clamp(0.8rem, 3vw, 0.9rem);
+                color: #555;
+                line-height: 1.5;
+                animation: slideDown 0.3s ease-out;
+            }
+
+            .significado.show {
+                display: block;
+            }
+
+            @keyframes slideDown {
+                from {
+                    opacity: 0;
+                    transform: translateY(-10px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            .significado {
+                display: none;
+                margin-top: 8px;
+                padding: 12px;
+                background: rgba(102, 126, 234, 0.08);
+                border-left: 3px solid #667eea;
+                border-radius: 8px;
+                font-size: clamp(0.8rem, 3vw, 0.9rem);
+                color: #555;
+                line-height: 1.5;
+                animation: slideDown 0.3s ease-out;
+            }
+
+            .significado.show {
+                display: block;
+            }
+
+            @keyframes slideDown {
+                from {
+                    opacity: 0;
+                    transform: translateY(-10px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            .btn-container {
+                position: sticky;
+                bottom: 12px;
+                text-align: center;
+                margin-top: 24px;
+                padding-top: 16px;
+            }
+
+            .btn-consultar {
+                background: linear-gradient(135deg, #8b9ff5 0%, #9b7ec4 100%);
+                color: white;
+                border: none;
+                padding: 18px 48px;
+                font-size: clamp(1rem, 4vw, 1.2rem);
+                font-weight: 600;
+                border-radius: 50px;
+                cursor: pointer;
+                box-shadow: 0 8px 24px rgba(139, 159, 245, 0.4);
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                width: 100%;
+                max-width: 300px;
+            }
+
+            .btn-consultar:active {
+                transform: scale(0.96);
+            }
+
+            .btn-voltar {
+                background: #252538;
+                color: #8b9ff5;
+                border: none;
+                padding: 16px 40px;
+                font-size: clamp(1rem, 4vw, 1.2rem);
+                font-weight: 600;
+                border-radius: 50px;
+                cursor: pointer;
+                box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+
+            .btn-voltar:active {
+                transform: scale(0.96);
+            }
+
+            @media (hover: hover) {
+                .pecado-item:hover {
+                    background: linear-gradient(135deg, #667eea10 0%, #764ba210 100%);
+                    transform: translateX(4px);
+                }
+                
+                .btn-consultar:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 12px 32px rgba(102, 126, 234, 0.5);
+                }
+            }
+
+            .resultado {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+                z-index: 1000;
+                justify-content: center;
+                align-items: center;
+                flex-direction: column;
+                padding: 20px;
+                overflow-y: auto;
+            }
+
+            .resultado.show {
+                display: flex;
+                animation: fadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+
+            @keyframes fadeIn {
+                from {
+                    opacity: 0;
+                }
+                to {
+                    opacity: 1;
+                }
+            }
+
+            .resultado-content {
+                text-align: center;
+                color: white;
+                padding: 24px;
+                max-width: 500px;
+                animation: slideUp 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+
+            @keyframes slideUp {
+                from {
+                    transform: translateY(30px);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateY(0);
+                    opacity: 1;
+                }
+            }
+
+            .resultado-titulo {
+                font-size: clamp(2rem, 8vw, 3.5rem);
+                margin-bottom: 16px;
+                text-shadow: 2px 2px 20px rgba(0,0,0,0.3);
+                font-weight: 700;
+                letter-spacing: -1px;
+                line-height: 1.2;
+            }
+
+            .resultado-subtitulo {
+                font-size: clamp(1.2rem, 5vw, 2rem);
+                margin-bottom: 32px;
+                opacity: 0.95;
+                font-weight: 600;
+            }
+
+            .resultado-pontuacao {
+                font-size: clamp(3.5rem, 15vw, 6rem);
+                font-weight: 800;
+                margin-bottom: 24px;
+                text-shadow: 4px 4px 20px rgba(0,0,0,0.4);
+                letter-spacing: -2px;
+            }
+
+            .resultado-mensagem {
+                font-size: clamp(1rem, 4vw, 1.5rem);
+                margin-bottom: 32px;
+                font-style: italic;
+                line-height: 1.5;
+                opacity: 0.95;
+            }
+
+            .btn-voltar {
+                background: white;
+                color: #667eea;
+                border: none;
+                padding: 16px 40px;
+                font-size: clamp(1rem, 4vw, 1.2rem);
+                font-weight: 600;
+                border-radius: 50px;
+                cursor: pointer;
+                box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+
+            .btn-voltar:active {
+                transform: scale(0.96);
+            }
+
+            @media (hover: hover) {
+                .btn-voltar:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 12px 32px rgba(0,0,0,0.4);
+                }
+            }
+
+            .confete {
+                position: fixed;
+                width: 8px;
+                height: 8px;
+                border-radius: 50%;
+                pointer-events: none;
+                z-index: 11000;
+            }
+
+            @keyframes cair {
+                to {
+                    transform: translateY(100vh) rotate(720deg);
+                    opacity: 0;
+                }
+            }
+
+            .popup-overlay {
+                display: none;
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                z-index: 2000;
+                max-width: 400px;
+                width: calc(100% - 40px);
+            }
+
+            .popup-overlay.show {
+                display: block;
+                animation: slideInRight 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            }
+
+            .popup-content {
+                background: #252538;
+                border-radius: 16px;
+                padding: 20px;
+                box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+                border-left: 4px solid #8b9ff5;
+                max-height: 400px;
+                overflow-y: auto;
+            }
+
+            @keyframes slideInRight {
+                from {
+                    transform: translateX(120%);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+
+            @keyframes slideOutRight {
+                from {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+                to {
+                    transform: translateX(120%);
+                    opacity: 0;
+                }
+            }
+
+            .popup-overlay.closing {
+                animation: slideOutRight 0.3s ease-out forwards;
+            }
+
+            .popup-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+                margin-bottom: 12px;
+                gap: 12px;
+            }
+
+            .popup-titulo {
+                font-size: clamp(1.1rem, 4vw, 1.3rem);
+                font-weight: 700;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                background-clip: text;
+                flex: 1;
+                line-height: 1.3;
+            }
+
+            .popup-close {
+                background: transparent;
+                border: none;
+                width: 28px;
+                height: 28px;
+                border-radius: 50%;
+                cursor: pointer;
+                font-size: 18px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: all 0.2s;
+                flex-shrink: 0;
+                color: #999;
+            }
+
+            .popup-close:hover {
+                background: #3a3a50;
+                color: #8b9ff5;
+            }
+
+            .popup-close:active {
+                transform: scale(0.9);
+            }
+
+            .popup-texto {
+                font-size: clamp(0.9rem, 3.2vw, 0.95rem);
+                line-height: 1.6;
+                color: #ccc;
+            }
+
+            @media (max-width: 640px) {
+                body {
+                    padding: 8px;
+                }
+
+                .container {
+                    padding: 20px 12px;
+                    border-radius: 20px;
+                }
+
+                .pecados-grid {
+                    grid-template-columns: 1fr;
+                    gap: 6px;
+                }
+
+                .pecado-item {
+                    padding: 12px 10px;
+                }
+
+                .btn-container {
+                    bottom: 8px;
+                    padding-top: 12px;
+                }
+
+                .popup-overlay {
+                    bottom: 10px;
+                    right: 10px;
+                    left: 10px;
+                    width: auto;
+                    max-width: none;
+                }
+
+                .popup-content {
+                    max-height: 50vh;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>Lista de Pecados</h1>
+            <p class="subtitle">"O principal elemento para uma vida livre do pecado é o arrependimento"</p>
+            
+            <div class="counter" id="counter">
+                <span id="counterText">Nenhum pecado selecionado</span>
+            </div>
+
+            <div class="pecados-grid" id="pecadosGrid"></div>
+
+            <div class="btn-container">
+                <button class="btn-consultar" onclick="consultarDeus()">🙏 Consultar Deus</button>
+            </div>
         </div>
 
-        <div class="pecados-grid" id="pecadosGrid"></div>
-    </div>
+        <div class="popup-overlay" id="popupOverlay">
+            <div class="popup-content">
+                <div class="popup-header">
+                    <h2 class="popup-titulo" id="popupTitulo"></h2>
+                    <button class="popup-close" onclick="fecharPopup()">✕</button>
+                </div>
+                <p class="popup-texto" id="popupTexto"></p>
+            </div>
+        </div>
 
-    <div class="btn-container">
-        <button class="btn-consultar" onclick="consultarDeus()">🙏 Consultar Deus</button>
-    </div>
+        <div class="resultado" id="resultado">
+            <div class="resultado-content">
+                <div class="resultado-titulo" id="resultadoTitulo"></div>
+                <div class="resultado-subtitulo" id="resultadoSubtitulo"></div>
+                <div class="resultado-pontuacao" id="resultadoPontuacao"></div>
+                <div class="resultado-mensagem" id="resultadoMensagem"></div>
+                <button class="btn-voltar" onclick="voltar()">Voltar e Refletir</button>
+            </div>
+        </div>
 
-    <div class="popup-overlay" id="popupOverlay">
-        <span class="popup-close" onclick="fecharPopup()">✕</span>
-        <h3 id="popupTitulo" style="margin-bottom: 8px; color: #8b9ff5;"></h3>
-        <p id="popupTexto" style="font-size: 0.95rem; line-height: 1.5; color: #ccc;"></p>
-    </div>
-
-    <div class="resultado" id="resultado">
-        <h2 id="resultadoTitulo" style="font-size: 2.5rem; margin-bottom: 10px;"></h2>
-        <p id="resultadoSubtitulo" style="color: #aaa; font-size: 1.2rem;"></p>
-        <div class="resultado-pontuacao" id="resultadoPontuacao"></div>
-        <p id="resultadoMensagem" style="max-width: 400px; font-style: italic; margin-bottom: 30px;"></p>
-        <button onclick="voltar()" style="background: white; color: #1a1a2e; border: none; padding: 15px 40px; border-radius: 50px; font-weight: bold; cursor: pointer;">Tentar Redenção</button>
-    </div>
-
-    <script>
-        const pecadosData = {
-            "Aborto": "Interrupção voluntária da gravidez.",
-            "Infidelidade": "Quebra da fidelidade conjugal ou de compromissos estabelecidos.",
-            "Retenção de Dízimos": "Deixar de ofertar o dízimo à igreja (Malaquias 3:8-10).",
-            "Adultério": "Relação sexual fora do casamento.",
-            "Sem misericórdia": "Falta de compaixão e perdão ao próximo.",
-            "Retenção de Ofertas": "Não contribuir com ofertas voluntárias.",
-            "Arrogante": "Orgulho excessivo e sentimento de superioridade.",
-            "Ladrão": "Tomar para si o que pertence ao outro.",
-            "Sadismo": "Prazer em causar dor ou sofrimento aos outros.",
-            "Autoritário": "Exercer poder de forma tirânica e opressora.",
-            "Jogos de Azar": "Apostas que dependem da sorte em vez da providência.",
-            "RPG (jogo da morte)": "Jogos interpretativos associados ao ocultismo por alguns.",
-            "Briguento": "Pessoa que provoca conflitos constantemente.",
-            "Mania de Doença": "Busca constante por atenção através de doenças.",
-            "Fornicação": "Relações sexuais fora do casamento.",
-            "Covarde": "Falta de coragem para testemunhar a fé.",
-            "Murmuração": "Falar mal dos outros pelas costas.",
-            "Suicídio": "Tirar a própria vida, autoridade que pertence a Deus.",
-            "Drogas": "Uso de substâncias que destroem o corpo.",
-            "Negligência": "Descuido com deveres espirituais ou familiares.",
-            "Horóscopo": "Consulta à astrologia em vez de confiar em Deus.",
-            "Feitiçaria": "Prática de magias e invocação de espíritos.",
-            "Ódio": "Sentimento de hostilidade oposto ao amor cristão.",
-            "Suborno": "Corrupção através de vantagens indevidas.",
-            "Imoral": "Conduta contrária aos princípios bíblicos.",
-            "Pacto Satânico": "Acordo com forças demoníacas.",
-            "Pirataria": "Roubo de propriedade intelectual.",
-            "Impuro": "Pensamentos ou ações que contaminam a pureza.",
-            "Preguiça": "Negligência no trabalho e obrigações.",
-            "Nova era": "Adesão a filosofias místicas sincréticas.",
-            "Injuriador": "Ofender e insultar os outros com palavras.",
-            "Racismo": "Discriminação baseada em etnia.",
-            "Consumismo": "Apego excessivo a bens materiais.",
-            "Abusador": "Maltratar física ou emocionalmente os outros.",
-            "Religiosidade": "Prática religiosa vazia e hipócrita.",
-            "Benzimentos": "Rituais de cura não-bíblicos.",
-            "Agressivo": "Comportamento violento e hostil.",
-            "Amor ao dinheiro": "Avareza, considerada raiz de todos os males.",
-            "Ciúme Doentio": "Possessividade exagerada e falta de confiança.",
-            "Simpatias e superstições": "Crenças em rituais mágicos.",
-            "Cartomancia": "Adivinhação através de cartas.",
-            "Acomodado": "Conformismo e falta de zelo espiritual.",
-            "Vingativo": "Buscar retaliação pessoal.",
-            "Umbanda": "Participação em religiões de matriz africana.",
-            "Cruel": "Tratar outros com dureza e sem piedade.",
-            "Intolerante": "Falta de compreensão com as diferenças.",
-            "Calote": "Não pagar dívidas assumidas.",
-            "Destruidor": "Causar dano intencional a propriedades ou pessoas.",
-            "Lascivo": "Sensualidade excessiva e luxúria.",
-            "Pichação": "Vandalismo de propriedade alheia.",
-            "Coração Duro": "Insensibilidade espiritual e recusa ao arrependimento.",
-            "Masturbação": "Autogratificação considerada impureza.",
-            "Orixás/Vodu": "Adoração a divindades pagãs.",
-            "Enganador": "Uso de mentiras e manipulação.",
-            "Mentira": "Falso testemunho e distorção da verdade.",
-            "Estupro": "Violência sexual, crime contra a imagem de Deus.",
-            "Faccão": "Divisão e criação de grupos rivais na igreja.",
-            "Música Satânica": "Músicas que glorificam o mal.",
-            "Traição": "Quebra de lealdade em relacionamentos.",
-            "Vício do Cigarro": "Dependência que destrói o corpo.",
-            "Palavrões": "Linguagem obscena que corrompe a fala.",
-            "Assassinato": "Tirar a vida de outro ser humano.",
-            "Hipócrita": "Falsidade religiosa.",
-            "Pornografia": "Consumo de material sexual explícito.",
-            "Festas idólatras": "Celebrações que honram ídolos.",
-            "Sexo com familiares": "Incesto, abominação bíblica.",
-            "Prostituição": "Venda do corpo para fins sexuais.",
-            "Retenção de primícias": "Não priorizar Deus no sustento.",
-            "Injusto": "Agir sem equidade.",
-            "Rancor": "Guardar ressentimento no coração.",
-            "Pedofilia": "Abuso de crianças, severamente condenado.",
-            "Acusador": "Julgar e acusar os outros constantemente.",
-            "Sado masoquismo": "Distorção do propósito da sexualidade.",
-            "Idolatria": "Colocar qualquer coisa no lugar de Deus.",
-            "Avarento": "Mesquinhez e apego ao dinheiro.",
-            "Violento": "Uso de força para intimidar.",
-            "Incredulidade": "Falta de confiança nas promessas divinas.",
-            "Caçoador": "Zombar de coisas sagradas ou pessoas.",
-            "Inveja": "Desejar o que pertence ao próximo.",
-            "Pensamentos Imorais": "Fantasias que poluem a mente.",
-            "Rebeldia": "Desobediência a Deus e autoridades.",
-            "Irreverência": "Falta de respeito ao sagrado.",
-            "Racionalismo": "Elevar o intelecto acima de Deus.",
-            "Primeira Comunhão": "Participação em rituais sem base bíblica (visão prot).",
-            "Vaidade": "Orgulho excessivo da aparência.",
-            "Crisma": "Sacramento considerado tradição humana.",
-            "Lesbianismo": "Relacionamento homossexual feminino.",
-            "Egoísmo": "Colocar interesses próprios acima de tudo.",
-            "Mesquinho": "Falta de generosidade.",
-            "Ganância": "Desejo insaciável por poder.",
-            "Opressor": "Subjugar os mais fracos.",
-            "Homossexualismo": "Relacionamento homossexual.",
-            "Ressentido": "Guardar amargura no coração.",
-            "Adivinhação": "Tentar prever o futuro ocultamente.",
-            "Sonegador": "Não pagar impostos devidos.",
-            "Sexo com Animais": "Bestialidade, abominação bíblica.",
-            "Iracundo": "Pessoa dominada pela raiva.",
-            "Caluniador": "Espalhar falsas acusações.",
-            "Intelectualismo": "Orgulho que menospreza a fé simples.",
-            "Cobiçoso": "Desejar o que é do próximo.",
-            "Imprudente": "Agir sem sabedoria.",
-            "Desonesto": "Falta de integridade.",
-            "Maledicente": "Usar a língua para destruir reputações.",
-            "Vício do Álcool": "Dependência que leva à embriaguez.",
-            "Espírito de Miséria": "Mentalidade que não vê a provisão de Deus.",
-            "Glutonaria": "Excesso no comer e beber.",
-            "Ocultismo": "Práticas espirituais obscuras e magia."
-        };
-
-        const grid = document.getElementById('pecadosGrid');
-        const counter = document.getElementById('counter');
-        const selectedPecados = new Set();
-        let popupTimer = null;
-
-        // Populate Grid
-        Object.keys(pecadosData).forEach((nome, index) => {
-            const item = document.createElement('div');
-            item.className = 'pecado-item';
-            item.innerHTML = `
-                <div class="checkbox-custom"></div>
-                <span class="pecado-label">${nome}</span>
-            `;
-            
-            // Single point of interaction: The entire item
-            item.onclick = (e) => {
-                e.preventDefault();
-                togglePecado(nome, item);
+        <script>
+            const pecadosData = {
+                "Aborto": "Interrupção voluntária da gravidez, considerado pela Igreja como violação do mandamento 'não matarás' e desrespeito à vida desde a concepção.",
+                "Infidelidade": "Quebra da fidelidade conjugal ou de compromissos estabelecidos, traindo a confiança depositada por Deus e pelo próximo.",
+                "Retenção de Dízimos": "Deixar de ofertar o dízimo (10% dos rendimentos) à igreja, considerado roubo a Deus conforme Malaquias 3:8-10.",
+                "Adultério": "Relação sexual fora do casamento, quebra do sacramento matrimonial e dos votos feitos perante Deus.",
+                "Sem misericórdia": "Falta de compaixão e perdão ao próximo, contrariando o ensinamento de Jesus sobre amar e perdoar os outros.",
+                "Retenção de Ofertas": "Não contribuir com ofertas voluntárias para a obra de Deus, demonstrando falta de generosidade e gratidão.",
+                "Arrogante": "Orgulho excessivo e sentimento de superioridade, considerado um dos pecados capitais que afasta a pessoa de Deus.",
+                "Ladrão": "Tomar para si o que pertence ao outro, violando o mandamento 'não furtarás' e o direito à propriedade.",
+                "Sadismo": "Prazer em causar dor ou sofrimento aos outros, contrário ao mandamento do amor ao próximo.",
+                "Autoritário": "Exercer poder de forma tirânica e opressora, sem humildade ou consideração pela dignidade dos outros.",
+                "Jogos de Azar": "Apostas e jogos que dependem da sorte, considerados confiança em forças aleatórias ao invés da providência divina.",
+                "RPG (jogo da morte)": "Jogos de interpretação considerados por algumas denominações como portais para ocultismo e influências demoníacas.",
+                "Briguento": "Pessoa que provoca conflitos e discórdias constantemente, contrariando o chamado cristão à paz e união.",
+                "Mania de Doença": "Hipocondria ou busca constante por atenção através de doenças imaginárias, demonstrando falta de fé na provisão divina.",
+                "Fornicação": "Relações sexuais fora do casamento, consideradas impureza e desonra ao corpo como templo do Espírito Santo.",
+                "Covarde": "Falta de coragem para testemunhar a fé ou defender os princípios cristãos por medo das consequências.",
+                "Murmuração": "Falar mal dos outros pelas costas, espalhar fofocas e críticas, destruindo a reputação do próximo.",
+                "Suicídio": "Tirar a própria vida, considerado pecado grave pois só Deus tem autoridade sobre a vida e a morte.",
+                "Drogas": "Uso de substâncias entorpecentes que alteram a consciência e destroem o corpo, templo do Espírito Santo.",
+                "Negligência": "Descuido e irresponsabilidade com deveres espirituais, familiares ou sociais confiados por Deus.",
+                "Horóscopo": "Consulta à astrologia para prever o futuro, considerada prática ocultista que substitui a confiança em Deus.",
+                "Feitiçaria": "Prática de magias, bruxarias e invocação de espíritos, expressamente condenada nas escrituras.",
+                "Ódio": "Sentimento intenso de aversão e hostilidade, oposto ao mandamento do amor pregado por Cristo.",
+                "Suborno": "Corrupção através de oferecimento ou recebimento de vantagens indevidas, contrário à justiça divina.",
+                "Imoral": "Conduta contrária aos princípios éticos e morais estabelecidos pela palavra de Deus.",
+                "Pacto Satânico": "Acordo ou aliança com forças demoníacas em troca de benefícios terrenos, rejeição direta a Deus.",
+                "Pirataria": "Roubo de propriedade intelectual, violação do direito alheio ao trabalho e criação.",
+                "Impuro": "Pensamentos, palavras ou ações que contaminam a pureza que Deus espera de seus filhos.",
+                "Preguiça": "Negligência no trabalho e nas obrigações, um dos sete pecados capitais que impede o crescimento espiritual.",
+                "Nova era": "Adesão a filosofias místicas que misturam várias crenças, afastando-se da verdade única em Cristo.",
+                "Injuriador": "Pessoa que ofende e insulta os outros com palavras, ferindo a dignidade criada por Deus.",
+                "Racismo": "Discriminação baseada em raça ou etnia, negação de que todos são criados à imagem e semelhança de Deus.",
+                "Consumismo": "Apego excessivo a bens materiais, fazendo do consumo um ídolo no lugar de Deus.",
+                "Abusador": "Pessoa que usa poder ou força para maltratar física, emocional ou sexualmente os outros.",
+                "Religiosidade": "Prática religiosa vazia e hipócrita, baseada apenas em rituais sem verdadeira transformação do coração.",
+                "Benzimentos": "Práticas supersticiosas de cura ou proteção através de rituais não-bíblicos, forma de ocultismo.",
+                "Agressivo": "Comportamento violento e hostil que contraria a mansidão e autocontrole ensinados por Cristo.",
+                "Amor ao dinheiro": "Avareza e idolatria às riquezas, considerada raiz de todos os males segundo 1 Timóteo 6:10.",
+                "Ciúme Doentio": "Desconfiança obsessiva e possessividade exagerada, demonstrando falta de amor verdadeiro e confiança.",
+                "Simpatias e supertições": "Crenças em rituais mágicos e superstições que substituem a fé genuína em Deus.",
+                "Cartomancia": "Adivinhação através de cartas (tarô, baralho), prática ocultista condenada biblicamente.",
+                "Acomodado": "Conformismo espiritual, falta de zelo e busca pelo crescimento na fé e nas obras.",
+                "Vingativo": "Buscar retaliação e vingança pessoal, contrariando o ensinamento de deixar a justiça nas mãos de Deus.",
+                "Umbanda": "Participação em religiões afro-brasileiras, consideradas idolatria e envolvimento com espíritos malignos.",
+                "Cruel": "Tratar outros com dureza e sem piedade, oposto à compaixão e misericórdia divinas.",
+                "Intolerante": "Falta de paciência e compreensão com as fraquezas e diferenças dos outros.",
+                "Calote": "Não pagar dívidas assumidas, desonestidade que quebra a palavra dada e prejudica o próximo.",
+                "Destruidor": "Causar dano intencional a pessoas, relacionamentos ou propriedades, contrário à chamada para edificar.",
+                "Lascivo": "Sensualidade excessiva e lascívia, pensamentos e desejos sexuais impuros.",
+                "Pichação": "Vandalismo e destruição de propriedade alheia através de grafites não autorizados.",
+                "Coração Duro": "Insensibilidade espiritual e recusa em se arrepender, resistência à ação do Espírito Santo.",
+                "Masturbação": "Autogratificação sexual considerada impureza e falta de autocontrole do corpo.",
+                "Orixás/Vodu": "Adoração a divindades afro-brasileiras ou práticas de vodu, consideradas idolatria e ocultismo.",
+                "Enganador": "Pessoa que usa mentiras e manipulação para tirar vantagem dos outros.",
+                "Mentira": "Falso testemunho e distorção da verdade, violação do mandamento 'não dirás falso testemunho'.",
+                "Estupro": "Violência sexual, crime hediondo que viola a dignidade e o corpo criado à imagem de Deus.",
+                "Faccão": "Divisão e criação de grupos rivais dentro da igreja, contrário à unidade do corpo de Cristo.",
+                "Música Satânica": "Músicas com letras ou simbologias que glorificam o mal, influenciando negativamente o espírito.",
+                "Traição": "Quebra de confiança e lealdade em qualquer relacionamento ou compromisso assumido.",
+                "Vício do Cigarro": "Dependência do tabaco que destrói o corpo, templo do Espírito Santo, e escraviza a vontade.",
+                "Palavrões": "Uso de linguagem obscena e palavras de baixo calão que corrompem a comunicação saudável.",
+                "Assassinato": "Tirar a vida de outro ser humano, violação máxima do mandamento 'não matarás'.",
+                "Hipócrita": "Fingimento e falsidade religiosa, apresentar-se como santo externamente mas ser corrupto internamente.",
+                "Pronografia": "Consumo de material sexualmente explícito que corrompe a mente e alimenta a luxúria.",
+                "Festas idólatras": "Participação em celebrações que honram falsos deuses ou ídolos pagãos.",
+                "Sexo com familiares": "Incesto, relação sexual entre parentes próximos, abominação expressamente condenada na Bíblia.",
+                "Prostituição": "Venda do corpo para fins sexuais, degradação da dignidade humana e do propósito da sexualidade.",
+                "Retenção de primícias": "Não oferecer a Deus os primeiros frutos do trabalho, demonstrando que Ele não é prioridade.",
+                "Injusto": "Agir sem justiça e equidade, favorecendo uns em detrimento de outros contrariando a justiça divina.",
+                "Rancor": "Guardar ressentimento e mágoa no coração, recusando-se a perdoar como Cristo perdoou.",
+                "Pedofilia": "Abuso sexual de crianças, crime hediondo que Jesus condenou severamente ao dizer sobre os pequeninos.",
+                "Acusador": "Pessoa que constantemente acusa e julga os outros, assumindo o papel que cabe apenas a Deus.",
+                "Sado masoquismo": "Práticas sexuais que envolvem dor e humilhação, distorção do propósito divino da sexualidade.",
+                "Idolatria": "Adoração a ídolos, imagens ou qualquer coisa que tome o lugar de Deus no coração.",
+                "Avarento": "Apego excessivo ao dinheiro e bens materiais, mesquinhez que impede a generosidade.",
+                "violento": "Uso de força física para machucar ou intimidar outros, contrário à paz de Cristo.",
+                "Incredulidade": "Falta de fé e confiança em Deus e suas promessas, duvidar da palavra divina.",
+                "Caçoador": "Zombar e ridicularizar os outros, especialmente em questões de fé e valores sagrados.",
+                "Inveja": "Desejo de possuir o que pertence ao outro, um dos sete pecados capitais que corrói a alma.",
+                "Pensamentos Imorais": "Fantasias e imaginações pecaminosas que poluem a mente e preparam terreno para ações erradas.",
+                "Rebeldia": "Resistência e desobediência à autoridade de Deus e às autoridades estabelecidas por Ele.",
+                "irreverência": "Falta de respeito e reverência a Deus, coisas sagradas e autoridades espirituais.",
+                "Racionalismo": "Confiança excessiva na razão humana ao invés da revelação divina, elevando o intelecto acima de Deus.",
+                "Primeira Comunhão": "Para algumas denominações protestantes, participar deste sacramento católico é considerado prática não-bíblica.",
+                "Vaidade": "Orgulho excessivo da aparência e admiração de si mesmo, colocando-se como centro ao invés de Deus.",
+                "Crisma": "Para denominações protestantes, este sacramento católico é visto como tradição humana sem base bíblica.",
+                "Lesbianismo": "Relacionamento homossexual entre mulheres, considerado por igrejas tradicionais como contrário ao plano divino.",
+                "Egoísmo": "Colocar os próprios interesses acima dos outros e de Deus, contrário ao amor sacrificial ensinado por Cristo.",
+                "Mesquinho": "Falta de generosidade e espírito avarento que não compartilha com quem tem necessidade.",
+                "Ganância": "Desejo insaciável por riquezas e poder, nunca satisfeito com o que Deus provê.",
+                "Opressor": "Pessoa que usa poder para subjugar e maltratar os mais fracos, contrário à justiça divina.",
+                "Homossexualismo": "Relacionamento homossexual, considerado por igrejas tradicionais como desvio do plano original de Deus.",
+                "Ressentido": "Guardar amargura e mágoa, permitindo que a falta de perdão envene o coração.",
+                "Adivinhação": "Tentar prever o futuro através de práticas ocultas ao invés de confiar na soberania de Deus.",
+                "Sonegador": "Não pagar impostos devidos, desonestidade fiscal que rouba do bem comum da sociedade.",
+                "Sexo com Animais": "Bestialidade, perversão sexual expressamente condenada como abominação nas escrituras.",
+                "Iracundo": "Pessoa dominada pela ira e raiva descontrolada, falta do fruto do Espírito que é domínio próprio.",
+                "Caluniador": "Espalhar acusações falsas para prejudicar a reputação alheia, forma grave de mentira.",
+                "Intelectualismo": "Orgulho intelectual que menospreza a fé simples, elevando a sabedoria humana acima da divina.",
+                "Cobiçoso": "Desejar intensamente o que pertence ao outro, violação do décimo mandamento.",
+                "Imprudente": "Agir sem sabedoria e discernimento, tomando decisões precipitadas sem buscar a direção de Deus.",
+                "Desonesto": "Falta de integridade em palavras e ações, enganar e manipular para obter vantagens.",
+                "Maledicente": "Falar mal e espalhar comentários negativos sobre os outros, usando a língua para destruir.",
+                "Vício do Álcool": "Dependência de bebidas alcoólicas que escraviza e leva à embriaguez condenada nas escrituras.",
+                "Espírito de Miséria": "Mentalidade de escassez e pobreza que não reconhece Deus como provedor abundante.",
+                "Glutonaria": "Gula, excesso no comer e beber, falta de autocontrole e moderação, um dos sete pecados capitais.",
+                "Ocultismo": "Envolvimento com práticas espirituais obscuras, magia negra e comunicação com espíritos malignos."
             };
 
-            grid.appendChild(item);
-        });
+            const pecados = Object.keys(pecadosData);
 
-        function togglePecado(nome, element) {
-            if (selectedPecados.has(nome)) {
-                selectedPecados.delete(nome);
-                element.classList.remove('checked');
-            } else {
-                selectedPecados.add(nome);
-                element.classList.add('checked');
-                mostrarPopup(nome, pecadosData[nome]);
-            }
-            atualizarContador();
-        }
-
-        function atualizarContador() {
-            const total = selectedPecados.size;
-            if (total === 0) {
-                counter.innerText = "Nenhum pecado selecionado";
-                counter.style.color = "#8b9ff5";
-            } else {
-                counter.innerText = `${total} ${total === 1 ? 'pecado selecionado' : 'pecados selecionados'}`;
-                counter.style.color = "#fff";
-            }
-        }
-
-        function mostrarPopup(titulo, texto) {
-            const popup = document.getElementById('popupOverlay');
-            document.getElementById('popupTitulo').innerText = titulo;
-            document.getElementById('popupTexto').innerText = texto;
+            const gridElement = document.getElementById('pecadosGrid');
             
-            popup.classList.add('show');
-            
-            if (popupTimer) clearTimeout(popupTimer);
-            popupTimer = setTimeout(fecharPopup, 4000);
-        }
-
-        function fecharPopup() {
-            document.getElementById('popupOverlay').classList.remove('show');
-        }
-
-        function consultarDeus() {
-            const total = selectedPecados.size;
-            const totalPossivel = Object.keys(pecadosData).length;
-            const perc = (total / totalPossivel) * 100;
-            
-            const res = document.getElementById('resultado');
-            const tit = document.getElementById('resultadoTitulo');
-            const sub = document.getElementById('resultadoSubtitulo');
-            const msg = document.getElementById('resultadoMensagem');
-            const pont = document.getElementById('resultadoPontuacao');
-
-            if (total === 0) {
-                tit.innerText = "✨ Pureza Irônica ✨";
-                sub.innerText = "Santo ou Mentiroso?";
-                msg.innerText = "Nenhum pecado? Volte e marque 'Mentira' agora mesmo.";
-                res.style.background = "linear-gradient(135deg, #667eea 0%, #764ba2 100%)";
-            } else if (perc < 15) {
-                tit.innerText = "😇 Quase um Anjo";
-                sub.innerText = "Caminho da Luz";
-                msg.innerText = "Poucos deslizes, mas o vigia não dorme.";
-                res.style.background = "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)";
-            } else if (perc < 40) {
-                tit.innerText = "😅 Pecador Comum";
-                sub.innerText = "Equilíbrio Perigoso";
-                msg.innerText = "Você está no muro. O problema é que o muro tem dono.";
-                res.style.background = "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)";
-            } else if (perc < 70) {
-                tit.innerText = "😰 Território de Brasas";
-                sub.innerText = "Mergulho Profundo";
-                msg.innerText = "Já sentiu o cheiro de enxofre? Está ficando quente.";
-                res.style.background = "linear-gradient(135deg, #fa709a 0%, #fee140 100%)";
-            } else {
-                tit.innerText = "🔥 Sócio do Subsolo 🔥";
-                sub.innerText = "VIP no Inferno";
-                msg.innerText = "O diabo está preparando seu tapete vermelho. VOCÊ VAI SIM!";
-                res.style.background = "linear-gradient(135deg, #ff0844 0%, #ffb199 100%)";
-            }
-
-            pont.innerText = `${total} / ${totalPossivel}`;
-            res.classList.add('show');
-            soltarConfetes();
-        }
-
-        function voltar() {
-            document.getElementById('resultado').classList.remove('show');
-            document.querySelectorAll('.confete').forEach(c => c.remove());
-        }
-
-        function soltarConfetes() {
-            const cores = ['#8b9ff5', '#ff0844', '#fee140', '#4facfe', '#ffffff'];
-            for(let i=0; i<60; i++) {
+            pecados.forEach((pecado, index) => {
+                const div = document.createElement('div');
+                div.className = 'pecado-item';
+                
+                div.innerHTML = `
+                    <input type="checkbox" id="pecado${index}" value="${pecado}">
+                    <label for="pecado${index}">${pecado}</label>
+                `;
+                
+                const checkbox = div.querySelector('input');
+                checkbox.addEventListener('change', function() {
+                    if (this.checked) {
+                        div.classList.add('checked');
+                        mostrarPopup(pecado, pecadosData[pecado]);
+                    } else {
+                        div.classList.remove('checked');
+                    }
+                    atualizarContador();
+                });
+                
+                const label = div.querySelector('label');
+                label.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    checkbox.checked = !checkbox.checked;
+                    checkbox.dispatchEvent(new Event('change'));
+                });
+                
+                gridElement.appendChild(div);
+            });
+            // Permite que o clique no label funcione naturalmente
+            // Mas adiciona funcionalidade extra para mostrar popup
+            label.addEventListener('click', function() {
+                // Aguarda o checkbox ser marcado naturalmente pelo label
                 setTimeout(() => {
-                    const c = document.createElement('div');
-                    c.className = 'confete';
-                    c.style.left = Math.random() * 100 + 'vw';
-                    c.style.top = '-20px';
-                    c.style.background = cores[Math.floor(Math.random() * cores.length)];
-                    c.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
-                    c.style.animation = `cair ${2 + Math.random() * 2}s linear forwards`;
-                    document.body.appendChild(c);
-                    setTimeout(() => c.remove(), 4000);
-                }, i * 40);
+                    if (checkbox.checked) {
+                        mostrarPopup(pecado, pecadosData[pecado]);
+                    }
+                }, 0);
+            });
+            
+            gridElement.appendChild(div);
+
+
+            function mostrarPopup(titulo, texto) {
+                const popup = document.getElementById('popupOverlay');
+                document.getElementById('popupTitulo').textContent = titulo;
+                document.getElementById('popupTexto').textContent = texto;
+                
+                // Remove closing class if exists
+                popup.classList.remove('closing');
+                popup.classList.add('show');
+                
+                // Auto-fechar após 8 segundos
+                if (window.popupTimeout) {
+                    clearTimeout(window.popupTimeout);
+                }
+                window.popupTimeout = setTimeout(() => {
+                    fecharPopup();
+                }, 8000);
             }
-        }
-    </script>
-</body>
-</html>
+
+            function fecharPopup() {
+                const popup = document.getElementById('popupOverlay');
+                popup.classList.add('closing');
+                
+                if (window.popupTimeout) {
+                    clearTimeout(window.popupTimeout);
+                }
+                
+                setTimeout(() => {
+                    popup.classList.remove('show', 'closing');
+                }, 300);
+            }
+
+            function atualizarContador() {
+                const checkboxes = document.querySelectorAll('input[type="checkbox"]:checked');
+                const total = checkboxes.length;
+                const counterText = document.getElementById('counterText');
+                
+                if (total === 0) {
+                    counterText.textContent = 'Nenhum pecado selecionado';
+                } else if (total === 1) {
+                    counterText.textContent = '1 pecado selecionado';
+                } else {
+                    counterText.textContent = `${total} pecados selecionados`;
+                }
+            }
+
+            function consultarDeus() {
+                const checkboxes = document.querySelectorAll('input[type="checkbox"]:checked');
+                const total = checkboxes.length;
+                const totalPecados = pecados.length;
+                const percentual = (total / totalPecados) * 100;
+
+                let titulo, subtitulo, mensagem, cor;
+
+                if (percentual === 0) {
+                    titulo = "✨ Pureza em Pessoa ✨";
+                    subtitulo = "Santidade";
+                    mensagem = "Volte e adicione 'mentira' na lista de pecados";
+                    cor = "linear-gradient(135deg, #667eea 0%, #764ba2 100%)";
+                } else if (percentual <= 20) {
+                    titulo = "😇 Quase um Anjo";
+                    subtitulo = "Alma Iluminada";
+                    mensagem = "Alguns deslizes, cuidado com o Capeta!";
+                    cor = "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)";
+                } else if (percentual <= 40) {
+                    titulo = "😅 Pecador Moderado";
+                    subtitulo = "Começou a lacração";
+                    mensagem = "Você está no caminho do céu, mas também do inferno!";
+                    cor = "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)";
+                } else if (percentual <= 60) {
+                    titulo = "😰 Território Perigoso";
+                    subtitulo = "Mergulho no Pecado";
+                    mensagem = "Tá quentinho, tá quentinho...";
+                    cor = "linear-gradient(135deg, #fa709a 0%, #fee140 100%)";
+                } else {
+                    titulo = "🔥 Alma Perdida 🔥";
+                    subtitulo = "Mergulho no Pecado";
+                    mensagem = "VOCÊ VAI SIM!";
+                    cor = "linear-gradient(135deg, #ff0844 0%, #ffb199 100%)";
+                }
+
+                document.getElementById('resultadoTitulo').textContent = titulo;
+                document.getElementById('resultadoSubtitulo').textContent = subtitulo;
+                document.getElementById('resultadoPontuacao').textContent = `${total} / ${totalPecados}`;
+                document.getElementById('resultadoMensagem').textContent = mensagem;
+                document.getElementById('resultado').style.background = cor;
+                document.getElementById('resultado').classList.add('show');
+
+                criarConfetes();
+            }
+
+            function voltar() {
+                document.getElementById('resultado').classList.remove('show');
+                document.querySelectorAll('.confete').forEach(c => c.remove());
+            }
+
+            function criarConfetes() {
+                const cores = ['#ff0844', '#ffb199', '#43e97b', '#4facfe', '#667eea', '#764ba2', '#fee140', '#f093fb', '#4facfe'];
+                const formas = ['circle', 'square'];
+                
+                for (let i = 0; i < 80; i++) {
+                    setTimeout(() => {
+                        const confete = document.createElement('div');
+                        confete.className = 'confete';
+                        confete.style.left = Math.random() * 100 + 'vw';
+                        confete.style.top = -20 + 'px';
+                        confete.style.background = cores[Math.floor(Math.random() * cores.length)];
+                        confete.style.animation = `cair ${(Math.random() * 2 + 2)}s linear forwards`;
+                        confete.style.animationDelay = Math.random() + 's';
+                        
+                        if (Math.random() > 0.5) {
+                            confete.style.borderRadius = '0';
+                            confete.style.transform = `rotate(${Math.random() * 360}deg)`;
+                        }
+                        
+                        document.body.appendChild(confete);
+
+                        setTimeout(() => confete.remove(), 5000);
+                    }, i * 30);
+                }
+            }
+        </script>
+    </body>
+    </html>
