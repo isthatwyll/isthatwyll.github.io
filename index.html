@@ -45,6 +45,14 @@
             font-size: clamp(1.5rem, 5vw, 2.2rem);
             font-weight: 700;
             letter-spacing: -0.5px;
+            transition: all 0.6s ease;
+        }
+
+        body.modo-pecador h1 {
+            background: linear-gradient(135deg, #ff0044 0%, #cc0033 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
         .subtitle {
@@ -70,6 +78,60 @@
             top: 4px;
             z-index: 10;
             backdrop-filter: blur(8px);
+            transition: all 0.4s ease;
+        }
+
+        body.modo-pecador .counter {
+            background: linear-gradient(135deg, #ff004425 0%, #cc000425 100%);
+            color: #ff4444;
+        }
+
+        .counter.modo-pecador {
+            background: linear-gradient(135deg, #ff004425 0%, #cc000425 100%);
+            color: #ff4444;
+            border-left: 4px solid #ff0044;
+            padding-left: 16px;
+        }
+
+        .btn-marcar-tudo {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 28px;
+            font-size: clamp(0.95rem, 3vw, 1.05rem);
+            font-weight: 700;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            margin-bottom: 20px;
+        }
+
+        body.modo-pecador .btn-marcar-tudo {
+            background: linear-gradient(135deg, #ff0044 0%, #cc0033 100%);
+            box-shadow: 0 6px 20px rgba(255, 0, 68, 0.5);
+        }
+
+        .btn-marcar-tudo:active {
+            transform: scale(0.95);
+            filter: brightness(1.1);
+        }
+
+        .btn-marcar-tudo.modo-pecador {
+            background: linear-gradient(135deg, #ff0044 0%, #cc0033 100%);
+            box-shadow: 0 6px 20px rgba(255, 0, 68, 0.5);
+        }
+
+        @media (hover: hover) {
+            .btn-marcar-tudo:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 10px 25px rgba(102, 126, 234, 0.6);
+            }
+
+            .btn-marcar-tudo.modo-pecador:hover {
+                box-shadow: 0 10px 25px rgba(255, 0, 68, 0.7);
+            }
         }
 
         .pecados-grid {
@@ -102,6 +164,13 @@
             background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
             border-color: #667eea;
             box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+            transition: all 0.2s ease;
+        }
+
+        body.modo-pecador .pecado-item.checked {
+            background: linear-gradient(135deg, #ff004415 0%, #cc003315 100%);
+            border-color: #ff0044;
+            box-shadow: 0 4px 12px rgba(255, 0, 68, 0.2);
         }
 
         .pecado-item input[type="checkbox"] {
@@ -112,6 +181,11 @@
             accent-color: #667eea;
             flex-shrink: 0;
             pointer-events: none;
+            transition: accent-color 0.3s ease;
+        }
+
+        body.modo-pecador .pecado-item input[type="checkbox"] {
+            accent-color: #ff0044;
         }
 
         .pecado-item label {
@@ -153,6 +227,11 @@
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             width: 100%;
             max-width: 320px;
+        }
+
+        body.modo-pecador .btn-consultar {
+            background: linear-gradient(135deg, #ff3366 0%, #cc0033 100%);
+            box-shadow: 0 10px 30px rgba(255, 0, 68, 0.6);
         }
 
         .btn-consultar:active {
@@ -355,6 +434,14 @@
             -webkit-text-fill-color: transparent;
             background-clip: text;
             flex: 1;
+            transition: all 0.3s ease;
+        }
+
+        body.modo-pecador .popup-titulo {
+            background: linear-gradient(135deg, #ff3366 0%, #ff0044 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
         .popup-close {
@@ -393,6 +480,10 @@
         
         <div class="counter" id="counter">
             <span id="counterText">Nenhum pecado selecionado</span>
+        </div>
+
+        <div style="text-align: center;">
+            <button class="btn-marcar-tudo" onclick="marcarTudo()">✓ Marcar Tudo</button>
         </div>
 
         <div class="pecados-grid" id="pecadosGrid"></div>
@@ -588,10 +679,65 @@
         function atualizarContador() {
             const checkboxes = document.querySelectorAll('input[type="checkbox"]:checked');
             const total = checkboxes.length;
+            const totalPecados = pecados.length;
             const counterText = document.getElementById('counterText');
-            if (total === 0) counterText.textContent = 'Nenhum pecado selecionado';
-            else if (total === 1) counterText.textContent = '1 pecado selecionado';
-            else counterText.textContent = `${total} pecados selecionados`;
+            const counter = document.getElementById('counter');
+            const btnMarcar = document.querySelector('.btn-marcar-tudo');
+            const body = document.body;
+            
+            if (total === 0) {
+                counterText.textContent = 'Nenhum pecado selecionado';
+                counter.classList.remove('modo-pecador');
+                btnMarcar.classList.remove('modo-pecador');
+                body.classList.remove('modo-pecador');
+            } else if (total === 1) {
+                counterText.textContent = '1 pecado selecionado';
+            } else {
+                counterText.textContent = `${total} pecados selecionados`;
+            }
+            
+            // Ativar modo pecador quando todos os pecados estão marcados
+            if (total === totalPecados && totalPecados > 0) {
+                counter.classList.add('modo-pecador');
+                btnMarcar.classList.add('modo-pecador');
+                body.classList.add('modo-pecador');
+                mostrarPopupPecador();
+            } else if (total < totalPecados) {
+                counter.classList.remove('modo-pecador');
+                btnMarcar.classList.remove('modo-pecador');
+                body.classList.remove('modo-pecador');
+            }
+        }
+
+        function marcarTudo() {
+            const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+            const pecadosItems = document.querySelectorAll('.pecado-item');
+            
+            // Verificar se todos já estão marcados
+            const todosMarcados = Array.from(checkboxes).every(cb => cb.checked);
+            
+            checkboxes.forEach((checkbox, index) => {
+                checkbox.checked = !todosMarcados;
+                const item = pecadosItems[index];
+                if (!todosMarcados) {
+                    item.classList.add('checked');
+                } else {
+                    item.classList.remove('checked');
+                }
+            });
+            
+            atualizarContador();
+        }
+
+        function mostrarPopupPecador() {
+            const popup = document.getElementById('popupOverlay');
+            document.getElementById('popupTitulo').textContent = '🔥 PECADOR PROFISSIONAL 🔥';
+            document.getElementById('popupTexto').textContent = 'Modo pecador profissional ativado! Pra você é mais fácil lembrar que pecado você não cometeu ainda';
+            popup.classList.remove('closing');
+            popup.classList.add('show');
+            
+            if (window.popupTimeout) clearTimeout(window.popupTimeout);
+            window.popupTimeout = setTimeout(() => fecharPopup(), 8000);
         }
 
         function consultarDeus() {
